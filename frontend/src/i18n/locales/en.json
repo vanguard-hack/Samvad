@@ -222,5 +222,9 @@
       "upper": "At least 1 uppercase letter",
       "special": "At least 1 special character"
     }
+  },
+  "dictation": {
+    "listening": "Dictation on, listening",
+    "stop": "Click, press Esc or Ctrl+Shift+Space to stop"
   }
 }

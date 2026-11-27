@@ -4,6 +4,7 @@ import { Outlet } from "react-router"
 
 import { useAuth } from "@/auth/auth-provider"
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar"
+import { FloatingDictation } from "@/features/dictation/floating-dictation"
 import { AppSidebar } from "./app-sidebar"
 import { AppTopbar } from "./app-topbar"
 
@@ -58,6 +59,7 @@ export function AppLayout() {
   return (
     <SidebarProvider open={open} onOpenChange={setOpen} className="h-svh overflow-hidden">
       <RailShortcut />
+      <FloatingDictation />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
