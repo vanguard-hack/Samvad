@@ -1,16 +1,20 @@
 import { ArrowLeft, Loader2, MailCheck } from "lucide-react"
-import { useEffect, useState, type FormEvent } from "react"
+import { REGEXP_ONLY_DIGITS } from "input-otp"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 
 import { LogoMark } from "@/components/brand/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
 import { errorKey, MIN_PASSWORD, RECOVERY_FLAG, type AuthError } from "@/auth/auth-errors"
 import { supabase } from "@/lib/supabase"
 
 /** Supabase rate-limits OTP emails to one per 60 s per address by default. */
 const RESEND_SECONDS = 60
+/** Supabase email OTP length (Auth → Providers → Email → "Email OTP Length"). */
+const CODE_LENGTH = 6
 
 /**
  * signIn   email + password (default)      signUp  create an account with a password
@@ -52,6 +56,12 @@ export function SignInPage() {
   // Supabase's own error text, shown small under the friendly message for support.
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [cooldown, setCooldown] = useState(0)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Submit as soon as the last digit is in (after React has the full code).
+  useEffect(() => {
+    if (code.length === CODE_LENGTH) formRef.current?.requestSubmit()
+  }, [code])
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -165,7 +175,7 @@ export function SignInPage() {
   const canSubmit =
     !busy &&
     (codeMode
-      ? code.length >= 6
+      ? code.length === CODE_LENGTH
       : isEmail(email) &&
         (!passwordMode || password.length >= (mode === "signUp" ? MIN_PASSWORD : 1)) &&
         (mode !== "signUp" || (firstName.trim() !== "" && lastName.trim() !== "")))
@@ -214,7 +224,7 @@ export function SignInPage() {
               </>
             )}
 
-            <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+            <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
               {mode === "signUp" && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-3">
@@ -265,19 +275,31 @@ export function SignInPage() {
                   <label htmlFor="code" className="text-sm font-medium">
                     {t("auth.code")}
                   </label>
-                  <Input
+                  {/* shadcn Input OTP: six boxes, paste and SMS/email autofill supported. */}
+                  <InputOTP
                     id="code"
-                    inputMode="numeric"
+                    maxLength={CODE_LENGTH}
+                    pattern={REGEXP_ONLY_DIGITS}
                     autoComplete="one-time-code"
-                    pattern="[0-9]*"
-                    maxLength={10}
-                    required
                     autoFocus
                     value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                    className="text-center font-mono text-lg tracking-[0.4em]"
+                    onChange={setCode}
+                    containerClassName="justify-center"
+                    aria-invalid={error ? true : undefined}
                     aria-describedby={error ? "auth-error" : undefined}
-                  />
+                  >
+                    <InputOTPGroup>
+                      {[0, 1, 2].map((i) => (
+                        <InputOTPSlot key={i} index={i} className="size-11 text-lg" />
+                      ))}
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      {[3, 4, 5].map((i) => (
+                        <InputOTPSlot key={i} index={i} className="size-11 text-lg" />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
                 </>
               )}
 
