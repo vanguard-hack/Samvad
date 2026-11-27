@@ -1,0 +1,139 @@
+{
+  "app": {
+    "name": "Samvad",
+    "tagline": "Medical interpreter"
+  },
+  "common": {
+    "interfaceLanguage": "Interface language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "draftTranslation": "Draft",
+    "draftTranslationHint": "Machine-drafted translation, awaiting review by a native speaker.",
+    "englishFallback": "English UI",
+    "comingSoon": "Coming soon",
+    "loading": "Loading…",
+    "skipToContent": "Skip to main content",
+    "phase": "Phase {{n}}"
+  },
+  "steps": {
+    "language": {
+      "title": "Language",
+      "body": "Patient picks a language by tile or by speaking."
+    },
+    "consent": {
+      "title": "Consent",
+      "body": "Spoken and tapped consent to record, timestamped."
+    },
+    "live": {
+      "title": "Live consultation",
+      "body": "Two-way interpretation with confidence badges."
+    },
+    "intake": {
+      "title": "Intake",
+      "body": "Voice-led questions. You approve each field."
+    },
+    "review": {
+      "title": "Review & prescribe",
+      "body": "History, reports, transcript, signed prescription."
+    },
+    "closing": {
+      "title": "Closing",
+      "body": "Medicine instructions spoken with pictograms."
+    }
+  },
+  "placeholder": {
+    "title": "{{step}} is coming in phase {{n}}",
+    "body": "This screen is a placeholder. The navigation and layout are in place so the flow can be reviewed end to end.",
+    "back": "Back to patients"
+  },
+  "config": {
+    "missingKeyTitle": "Clerk is not configured",
+    "missingKeyBody": "Add VITE_CLERK_PUBLISHABLE_KEY to frontend/.env.local and restart the dev server."
+  },
+  "nav": {
+    "newConsultation": "New consultation",
+    "toggleSidebar": "Toggle sidebar",
+    "consultations": "Consultations",
+    "patients": "Patients",
+    "approvals": "Approvals",
+    "prescriptions": "Prescriptions",
+    "reports": "Outside reports",
+    "settings": "Settings",
+    "help": "Help & support",
+    "groups": {
+      "workspace": "Workspace",
+      "clinical": "Clinical"
+    },
+    "breadcrumb": "Breadcrumb",
+    "interpreter": "Interpreter"
+  },
+  "topbar": {
+    "search": "Search patients, IDs…"
+  },
+  "patients": {
+    "title": "Patients",
+    "subtitle": "Every visit, transcript and prescription in one record.",
+    "add": "New patient",
+    "searchPlaceholder": "Search by name…",
+    "col": {
+      "patient": "Patient",
+      "id": "Patient ID",
+      "phone": "Phone",
+      "language": "Language",
+      "lastVisit": "Last visit",
+      "visits": "Visits",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "followUp": "Follow-up due",
+      "needsReview": "Needs review"
+    },
+    "ageSex": "{{age}} yrs · {{sex}}",
+    "sex": {
+      "F": "Female",
+      "M": "Male"
+    },
+    "open": "Open record",
+    "noVoice": "No voice support yet",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago",
+    "phoneMasked": "Masked for privacy",
+    "pictureMode": "Picture mode — no voice for this language"
+  },
+  "section": {
+    "title": "{{name}} is coming in phase {{n}}",
+    "body": "This screen is a placeholder so the navigation can be reviewed end to end.",
+    "back": "Back to patients"
+  },
+  "table": {
+    "noResults": "No results.",
+    "showing": "Showing {{from}}–{{to}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "interpreter": {
+    "notConnected": "Interpretation not connected yet",
+    "privacy": "Audio is measured in this browser only. Nothing is recorded or sent.",
+    "micHelp": "Allow microphone access in your browser’s address bar, then try again.",
+    "status": {
+      "idle": "Ready",
+      "connecting": "Connecting to microphone…",
+      "listening": "Listening",
+      "denied": "Microphone access was blocked",
+      "unsupported": "This browser can’t use a microphone",
+      "error": "Microphone error"
+    },
+    "note": {
+      "record": "Start recording",
+      "send": "Finish recording",
+      "discard": "Discard recording",
+      "recording": "Recording",
+      "sent": "Recording finished"
+    },
+    "captured": "Recording ended ({{seconds}} s). Nothing was saved."
+  }
+}

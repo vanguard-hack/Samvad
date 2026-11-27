@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+dist-ssr/
+dev-dist/
+*.tsbuildinfo
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.local
+
+# Clerk CLI claim/temp files
+.clerk/
+
+# Python (backend, later phases)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

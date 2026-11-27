@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f5f7" />
+    <meta name="description" content="Samvad — voice-first two-way medical interpreter for Indian clinics." />
+    <title>Samvad — Medical Interpreter</title>
+    <script>
+      // Light by default; dark only if the doctor chose it (or chose System on a dark OS).
+      (function () {
+        try {
+          var t = localStorage.getItem('samvaad.theme');
+          var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

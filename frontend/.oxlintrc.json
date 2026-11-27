@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "src/components/agents/**",
+    "src/components/motion/**",
+    "src/components/arc/**",
+    "src/components/ui/**",
+    "src/lib/hooks/**",
+    "src/lib/i18n.tsx",
+    "src/lib/ease.ts",
+    "src/lib/layers.ts",
+    "src/lib/merge-refs.ts",
+    "src/lib/touch.ts",
+    "src/hooks/use-mobile.ts"
+  ]
+}

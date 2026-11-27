@@ -1,0 +1,442 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@clerk/ui/themes/shadcn.css";
+
+/* Fonts — one stack covers every script. Each @font-face carries a
+   unicode-range, so the browser only downloads the files for glyphs that are
+   actually on screen. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/noto-sans-devanagari";
+@import "@fontsource-variable/noto-sans-bengali";
+@import "@fontsource-variable/noto-sans-gujarati";
+@import "@fontsource-variable/noto-sans-gurmukhi";
+@import "@fontsource-variable/noto-sans-kannada";
+@import "@fontsource-variable/noto-sans-malayalam";
+@import "@fontsource-variable/noto-sans-oriya";
+@import "@fontsource-variable/noto-sans-tamil";
+@import "@fontsource-variable/noto-sans-telugu";
+@import "@fontsource-variable/noto-sans-meetei-mayek";
+@import "@fontsource/noto-sans-ol-chiki";
+@import "@fontsource-variable/noto-naskh-arabic";
+@import "@fontsource-variable/noto-nastaliq-urdu";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────────── Design tokens ─────────────────────────────
+   Source: DESIGN-apple.md, adapted for a clinical product. Deviations:
+   1. Indic fonts (Noto) — SF Pro / Inter have no Indic glyphs.
+   2. Status colours (amber/red/green) exist ONLY for safety meaning
+      (confidence gates, errors, verified). Action Blue stays the sole
+      interactive colour.
+   3. Muted text #6e6e73 instead of #7a7a7a — #7a7a7a fails WCAG AA on white.
+   4. Compact doctor UI: 14px body, 36px controls (user asked for denser
+      screens that fit one viewport). Patient-facing targets stay 64px.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --font-sans:
+    "Inter Variable", "Noto Sans Devanagari Variable", "Noto Sans Bengali Variable",
+    "Noto Sans Gujarati Variable", "Noto Sans Gurmukhi Variable", "Noto Sans Kannada Variable",
+    "Noto Sans Malayalam Variable", "Noto Sans Oriya Variable", "Noto Sans Tamil Variable",
+    "Noto Sans Telugu Variable", "Noto Sans Meetei Mayek Variable", "Noto Sans Ol Chiki",
+    "Noto Naskh Arabic Variable", system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-link: var(--link);
+  --color-surface: var(--surface);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-inverse-foreground: var(--surface-inverse-foreground);
+
+  /* Safety semantics — never decorative */
+  --color-verified: var(--verified);
+  --color-verified-soft: var(--verified-soft);
+  --color-caution: var(--caution);
+  --color-caution-soft: var(--caution-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Apple radius grammar: sm 8 · md 11 · lg 18 · pill */
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 28px;
+  --radius-4xl: 36px;
+
+  /* Apple type scale */
+  --text-hero: 40px;
+  --text-hero--line-height: 1.1;
+  --text-hero--letter-spacing: -0.28px;
+  --text-display: 26px;
+  --text-display--line-height: 1.1;
+  --text-lead: 20px;
+  --text-lead--line-height: 1.14;
+  --text-tagline: 17px;
+  --text-tagline--line-height: 1.19;
+  --text-body: 14px;
+  --text-body--line-height: 1.45;
+  --text-body--letter-spacing: -0.15px;
+  --text-caption: 13px;
+  --text-caption--line-height: 1.43;
+  --text-fine: 12px;
+  --text-fine--line-height: 1.33;
+
+  --spacing-touch: 36px; /* doctor UI (mouse/pen/tablet) */
+  --spacing-touch-patient: 64px;
+  --ease-out:
+    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:
+    cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer:
+    cubic-bezier(0.32, 0.72, 0, 1);
+  --color-border-strong:
+    var(--border-strong);
+  --color-neon:
+    var(--neon);
+  --color-success:
+    var(--success);
+  --color-warning:
+    var(--warning);
+  --animate-marquee:
+    marquee 30s linear infinite;
+  --animate-marquee-vertical:
+    marquee-vertical 30s linear infinite;
+  --animate-shimmer:
+    shimmer 2.5s linear infinite;
+  --color-glass-thin-bg:
+    var(--glass-thin-bg);
+  --color-glass-strong-bg:
+    var(--glass-strong-bg);
+  --color-glass-border:
+    var(--glass-border);
+  --color-glass-bg:
+    var(--glass-bg);
+  @keyframes marquee {
+  from {
+    transform:
+    translateX(0);
+    }
+  to {
+    transform:
+    translateX(calc(-100% - var(--gap, 1rem)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform:
+    translateY(0);
+    }
+  to {
+    transform:
+    translateY(calc(-100% - var(--gap, 1rem)));
+    }
+  }
+  @keyframes shimmer {
+  from {
+    background-position:
+    200% 0;
+    }
+  to {
+    background-position:
+    -200% 0;
+    }
+  }
+}
+
+:root {
+  --radius: 11px;
+
+  --background: #f5f5f7;          /* parchment canvas */
+  --foreground: #1d1d1f;          /* ink */
+  --surface: #ffffff;             /* white tile */
+  --surface-inverse: #272729;     /* dark tile */
+  --surface-inverse-foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --popover: #ffffff;
+  --popover-foreground: #1d1d1f;
+  --primary: #0066cc;             /* Action Blue */
+  --primary-foreground: #ffffff;
+  --secondary: #fafafc;           /* pearl */
+  --secondary-foreground: #333333;
+  --muted: #f0f0f0;
+  --muted-foreground: #6e6e73;
+  --accent: #f0f0f2;
+  --accent-foreground: #1d1d1f;
+  --destructive: #c4001a;
+  --border: #e0e0e0;              /* hairline */
+  --input: #e3e3e8;
+  --ring: #0071e3;                /* focus blue */
+  --link: #0066cc;
+
+  --verified: #1b7f3b;
+  --verified-soft: #e8f5ec;
+  --caution: #8a5300;
+  --caution-soft: #fff4dc;
+  --danger: #c4001a;
+  --danger-soft: #fdecee;
+
+  --chart-1: #0066cc;
+  --chart-2: #6e6e73;
+  --chart-3: #1b7f3b;
+  --chart-4: #8a5300;
+  --chart-5: #c4001a;
+  --sidebar: #f5f5f7;
+  --sidebar-foreground: #1d1d1f;
+  --sidebar-primary: #0066cc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8e8ed;
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: #e0e0e0;
+  --sidebar-ring: #0071e3;
+  --border-strong:
+    oklch(15% 0 0 / 0.12);
+  --neon:
+    oklch(80% 0.22 145);
+  --success:
+    oklch(70% 0.18 155);
+  --warning:
+    oklch(78% 0.18 75);
+  --glass-bg:
+    oklch(99% 0 0 / 0.55);
+  --glass-border:
+    oklch(15% 0 0 / 0.08);
+  --glass-strong-bg:
+    rgb(255 255 255 / 0.7);
+  --glass-thin-bg:
+    rgb(255 255 255 / 0.45);
+}
+
+.dark {
+  --background: #161617;
+  --foreground: #f5f5f7;
+  --surface: #1d1d1f;
+  --surface-inverse: #f5f5f7;
+  --surface-inverse-foreground: #1d1d1f;
+  --card: #272729;                /* surface-tile-1 */
+  --card-foreground: #f5f5f7;
+  --popover: #2a2a2c;             /* surface-tile-2 */
+  --popover-foreground: #f5f5f7;
+  /* #2997ff is too light for white button text (2.9:1); buttons keep #0071e3
+     (4.6:1) and only inline links use Sky Link Blue. */
+  --primary: #0071e3;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2a2c;
+  --secondary-foreground: #f5f5f7;
+  --muted: #252527;
+  --muted-foreground: #a1a1a6;
+  --accent: #333336;
+  --accent-foreground: #f5f5f7;
+  --destructive: #ff6961;
+  --border: rgb(255 255 255 / 0.12);
+  --input: rgb(255 255 255 / 0.18);
+  --ring: #2997ff;
+  --link: #2997ff;
+
+  --verified: #5fd47f;
+  --verified-soft: rgb(95 212 127 / 0.14);
+  --caution: #ffc04d;
+  --caution-soft: rgb(255 192 77 / 0.14);
+  --danger: #ff6961;
+  --danger-soft: rgb(255 105 97 / 0.14);
+
+  --sidebar: #161617;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-primary: #0071e3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2a2c;
+  --sidebar-accent-foreground: #f5f5f7;
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-ring: #2997ff;
+  --border-strong:
+    rgb(255 255 255 / 0.1);
+  --neon:
+    oklch(80% 0.22 145);
+  --success:
+    oklch(70% 0.18 155);
+  --warning:
+    oklch(78% 0.18 75);
+  --glass-bg:
+    rgb(28 28 28 / 0.55);
+  --glass-border:
+    rgb(255 255 255 / 0.08);
+  --glass-strong-bg:
+    rgb(28 28 28 / 0.6);
+  --glass-thin-bg:
+    rgb(21 21 21 / 0.45);
+}
+
+/* ── uiarc (Arc) tokens, mapped onto Samvad's palette ─────────────────────
+   Used by src/components/arc/* (theme switch). Colours follow light/dark
+   automatically because they point at the theme variables above. */
+:root {
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --control-height-sm: 1.75rem;
+  --control-height-md: 2rem;
+  --control-height-lg: 2.25rem;
+  --radius-control: 0.5rem;
+  --leading-body: 1.4;
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-spring: 200ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --surface-muted: var(--muted);
+  --border-strong: color-mix(in oklab, var(--foreground) 28%, var(--border));
+  --text-muted: var(--muted-foreground);
+  --text-secondary: var(--muted-foreground);
+  --shadow-resting: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    /* 15px root: every rem-based shadcn size (text, buttons, inputs, gaps)
+       scales down together. A percentage keeps the browser zoom setting. */
+    font-size: 93.75%;
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground text-sm antialiased;
+    font-feature-settings: "ss03";
+  }
+  /* Urdu and Kashmiri read best in Nastaliq; Sindhi stays in Naskh. */
+  :lang(ur),
+  :lang(ks) {
+    font-family: "Noto Nastaliq Urdu Variable", "Noto Naskh Arabic Variable", var(--font-sans);
+    line-height: 2;
+  }
+  /* Indic scripts have tall stacks and matras — give them room. Negative
+     tracking is a Latin-only effect; it breaks conjuncts in Indic scripts. */
+  :lang(hi), :lang(mr), :lang(ne), :lang(sa), :lang(mai), :lang(doi), :lang(gom), :lang(brx),
+  :lang(bn), :lang(as), :lang(gu), :lang(pa), :lang(kn), :lang(ml), :lang(or), :lang(ta),
+  :lang(te), :lang(mni), :lang(sat), :lang(sd) {
+    letter-spacing: 0 !important;
+    line-height: 1.6;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Frosted sticky bar — the one place the design uses backdrop blur. */
+  .frosted {
+    background-color: color-mix(in srgb, var(--background) 80%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .tracking-display {
+    letter-spacing: -0.015em;
+  }
+}
+
+@utility scrollbar-hide {
+  &::-webkit-scrollbar {
+    display:
+    none;
+  }
+    scrollbar-width:
+    none;
+}
+
+@utility mask-radial-fade {
+    mask-image:
+    radial-gradient(ellipse at center, black 40%, transparent 75%);
+}
+
+@utility mask-b-fade {
+    mask-image:
+    linear-gradient(to bottom, black 60%, transparent);
+}
+
+@utility glass {
+    background:
+    var(--glass-bg);
+    backdrop-filter:
+    blur(20px) saturate(160%);
+    border:
+    1px solid var(--glass-border);
+    box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 24px 60px -24px rgb(0 0 0 / 0.45);
+}
+
+@utility glass-strong {
+    background:
+    var(--glass-strong-bg);
+    backdrop-filter:
+    blur(16px);
+}
+
+@utility glass-thin {
+    background:
+    var(--glass-thin-bg);
+    backdrop-filter:
+    blur(12px);
+    border:
+    1px solid var(--glass-border);
+}
+
+@utility press {
+    transition:
+    transform 120ms var(--ease-out);
+  &:active {
+    transform:
+    scale(0.97);
+  }
+}
