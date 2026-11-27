@@ -50,7 +50,7 @@
   },
   "config": {
     "missingKeyTitle": "Clerk कॉन्फ़िगर नहीं है",
-    "missingKeyBody": "frontend/.env.local में VITE_CLERK_PUBLISHABLE_KEY जोड़ें और डेव सर्वर फिर से शुरू करें।"
+    "missingKeyBody": "VITE_CLERK_PUBLISHABLE_KEY सेट करें — लोकल चलाते समय frontend/.env.local में, या होस्ट (जैसे Railway) पर बिल्ड वेरिएबल के रूप में — फिर दोबारा बिल्ड करें।"
   },
   "nav": {
     "newConsultation": "नया परामर्श",

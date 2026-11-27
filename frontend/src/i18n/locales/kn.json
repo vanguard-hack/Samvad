@@ -50,7 +50,7 @@
   },
   "config": {
     "missingKeyTitle": "Clerk ಕಾನ್ಫಿಗರ್ ಆಗಿಲ್ಲ",
-    "missingKeyBody": "frontend/.env.local ನಲ್ಲಿ VITE_CLERK_PUBLISHABLE_KEY ಸೇರಿಸಿ ಮತ್ತು ಡೆವ್ ಸರ್ವರ್ ಮರುಪ್ರಾರಂಭಿಸಿ."
+    "missingKeyBody": "VITE_CLERK_PUBLISHABLE_KEY ಹೊಂದಿಸಿ — ಸ್ಥಳೀಯವಾಗಿ ಚಲಾಯಿಸುವಾಗ frontend/.env.local ನಲ್ಲಿ, ಅಥವಾ ಹೋಸ್ಟ್‌ನಲ್ಲಿ (ಉದಾ. Railway) ಬಿಲ್ಡ್ ವೇರಿಯಬಲ್ ಆಗಿ — ನಂತರ ಮರು-ಬಿಲ್ಡ್ ಮಾಡಿ."
   },
   "nav": {
     "newConsultation": "ಹೊಸ ಸಮಾಲೋಚನೆ",

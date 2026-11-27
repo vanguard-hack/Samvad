@@ -50,7 +50,7 @@
   },
   "config": {
     "missingKeyTitle": "Clerk கட்டமைக்கப்படவில்லை",
-    "missingKeyBody": "frontend/.env.local-இல் VITE_CLERK_PUBLISHABLE_KEY-ஐச் சேர்த்து டெவ் சர்வரை மீண்டும் தொடங்கவும்."
+    "missingKeyBody": "VITE_CLERK_PUBLISHABLE_KEY-ஐ அமைக்கவும் — உள்ளூரில் இயக்கும்போது frontend/.env.local-இல், அல்லது ஹோஸ்டில் (எ.கா. Railway) பில்ட் மாறியாக — பின்னர் மீண்டும் பில்ட் செய்யவும்."
   },
   "nav": {
     "newConsultation": "புதிய ஆலோசனை",

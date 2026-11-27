@@ -50,7 +50,7 @@
   },
   "config": {
     "missingKeyTitle": "Clerk is not configured",
-    "missingKeyBody": "Add VITE_CLERK_PUBLISHABLE_KEY to frontend/.env.local and restart the dev server."
+    "missingKeyBody": "Set VITE_CLERK_PUBLISHABLE_KEY — in frontend/.env.local when running locally, or as a build variable on your host (e.g. Railway) — then rebuild."
   },
   "nav": {
     "newConsultation": "New consultation",
