@@ -49,8 +49,8 @@
     "back": "Back to patients"
   },
   "config": {
-    "missingKeyTitle": "Clerk is not configured",
-    "missingKeyBody": "Set VITE_CLERK_PUBLISHABLE_KEY — in frontend/.env.local when running locally, or as a build variable on your host (e.g. Railway) — then rebuild."
+    "missingKeyTitle": "Sign-in is not configured",
+    "missingKeyBody": "Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY — in frontend/.env.local when running locally, or as build variables on your host (e.g. Railway) — then rebuild."
   },
   "nav": {
     "newConsultation": "New consultation",
@@ -135,5 +135,26 @@
       "sent": "Recording finished"
     },
     "captured": "Recording ended ({{seconds}} s). Nothing was saved."
+  },
+  "auth": {
+    "title": "Sign in to Samvad",
+    "emailHint": "We’ll email you a 6-digit code.",
+    "codeHint": "Enter the code we sent to {{email}}.",
+    "email": "Email",
+    "code": "Sign-in code",
+    "sendCode": "Send code",
+    "verify": "Sign in",
+    "resend": "Resend code",
+    "resendIn": "Resend in {{seconds}} s",
+    "changeEmail": "Change email",
+    "doctorsOnly": "Sign-in is for doctors. Patients never need an account.",
+    "account": "Account",
+    "signOut": "Sign out",
+    "errors": {
+      "rateLimit": "Too many requests. Wait a minute and try again.",
+      "badCode": "That code is wrong or has expired. Check it, or send a new one.",
+      "signupDisabled": "New accounts are invite-only. Ask your clinic admin for access.",
+      "generic": "Something went wrong. Check your connection and try again."
+    }
   }
 }

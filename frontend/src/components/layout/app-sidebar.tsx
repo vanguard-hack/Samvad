@@ -1,10 +1,19 @@
-import { useUser, UserButton } from "@clerk/react"
-import { ChevronRight, Plus } from "lucide-react"
+import { ChevronRight, ChevronsUpDown, LogOut, Plus } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, useLocation } from "react-router"
+import { Link, useLocation, useNavigate } from "react-router"
 
+import { useAuth } from "@/auth/auth-provider"
 import { Logo, LogoMark } from "@/components/brand/logo"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sidebar,
   SidebarContent,
@@ -89,7 +98,11 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 
 export function AppSidebar() {
   const { t } = useTranslation()
-  const { user, isLoaded } = useUser()
+  const { user, isLoaded, signOut } = useAuth()
+  const navigate = useNavigate()
+  const email = user?.email ?? ""
+  const name = (user?.user_metadata?.full_name as string | undefined) || email.split("@")[0] || "—"
+  const initials = name.slice(0, 2).toUpperCase()
   const { state, setOpenMobile } = useSidebar()
   const collapsed = state === "collapsed"
 
@@ -126,17 +139,37 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             {isLoaded ? (
-              <div className="flex items-center gap-2 p-1">
-                <UserButton appearance={{ elements: { avatarBox: "size-7" } }} />
-                {!collapsed && (
-                  <div className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-sm font-medium">{user?.fullName || user?.username || "—"}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {user?.primaryEmailAddress?.emailAddress}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<SidebarMenuButton size="lg" tooltip={email} aria-label={t("auth.account")} />}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+                  >
+                    {initials}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span className="truncate text-sm font-medium">{name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{email}</span>
+                  </span>
+                  <ChevronsUpDown className="ms-auto" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="start" className="w-56">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void signOut().then(() => navigate("/sign-in", { replace: true }))
+                    }}
+                  >
+                    <LogOut />
+                    {t("auth.signOut")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <SidebarMenuSkeleton showIcon />
             )}

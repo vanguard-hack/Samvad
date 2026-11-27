@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 
 import { Skeleton } from "@/components/ui/skeleton"
 
-/** Shown while Clerk loads: a skeleton of the app shell. */
+/** Shown while the auth session loads: a skeleton of the app shell. */
 export function FullPageLoader() {
   const { t } = useTranslation()
   return (

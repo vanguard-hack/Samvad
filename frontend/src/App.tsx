@@ -15,23 +15,16 @@ const PLACEHOLDER_SECTIONS = ALL_NAV_ITEMS.filter((i) => i.phase !== undefined)
 export default function App() {
   return (
     <Routes>
-      {/* Clerk's path routing needs the splat for its sub-steps (factor-one, verify, …). */}
       <Route
-        path="/sign-in/*"
+        path="/sign-in"
         element={
           <RedirectIfSignedIn>
-            <SignInPage mode="sign-in" />
+            <SignInPage />
           </RedirectIfSignedIn>
         }
       />
-      <Route
-        path="/sign-up/*"
-        element={
-          <RedirectIfSignedIn>
-            <SignInPage mode="sign-up" />
-          </RedirectIfSignedIn>
-        }
-      />
+      {/* Supabase creates the account on first sign-in, so there is no separate sign-up. */}
+      <Route path="/sign-up" element={<Navigate to="/sign-in" replace />} />
 
       <Route
         element={

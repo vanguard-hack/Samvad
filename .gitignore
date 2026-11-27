@@ -37,3 +37,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 *.swp
+
+# Claude Code: local skill symlinks (recreate with `npx skills experimental_install`) and personal settings
+.claude/skills/
+.claude/settings.local.json

@@ -11,9 +11,11 @@ RUN npm ci --no-audit --no-fund
 
 # Vite inlines VITE_* variables at build time. Railway passes service
 # variables to the build when they are declared as ARGs.
-# The Clerk publishable key is public by design (it ships in the browser bundle).
-ARG VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+# Both are public by design (they ship in the browser bundle); never pass the
+# Supabase secret / service_role key here.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL     VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 
 COPY frontend/ ./
 RUN npm run build

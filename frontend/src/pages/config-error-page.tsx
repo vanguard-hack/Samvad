@@ -1,7 +1,7 @@
 import { TriangleAlertIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-/** Shown instead of crashing when the Clerk key is missing. */
+/** Shown instead of crashing when the Supabase settings are missing. */
 export function ConfigErrorPage() {
   const { t } = useTranslation()
   return (

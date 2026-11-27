@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # Same Dockerfile Railway uses; catches deploy breakage before Railway does.
-      - run: docker build --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_test_ci_placeholder -t samvad-ci .
+      - run: docker build --build-arg VITE_SUPABASE_URL=https://ci-placeholder.supabase.co --build-arg VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci_placeholder -t samvad-ci .
 
       - name: Smoke-test the container
         run: |

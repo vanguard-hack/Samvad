@@ -1,15 +1,15 @@
-import { useUser } from "@clerk/react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Outlet } from "react-router"
 
+import { useAuth } from "@/auth/auth-provider"
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar"
 import { AppSidebar } from "./app-sidebar"
 import { AppTopbar } from "./app-topbar"
 
-/** Collapsed/expanded rail state, remembered per doctor (Clerk user id). */
+/** Collapsed/expanded rail state, remembered per doctor (Supabase user id). */
 function useRailState() {
-  const { user } = useUser()
+  const { user } = useAuth()
   const key = `samvad.sidebar.${user?.id ?? "anon"}`
   // Keyed by doctor: when the signed-in user changes, the stored value for the
   // new key is read during render (no effect needed).

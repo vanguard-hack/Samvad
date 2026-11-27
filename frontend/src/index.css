@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@clerk/ui/themes/shadcn.css";
 
 /* Fonts — one stack covers every script. Each @font-face carries a
    unicode-range, so the browser only downloads the files for glyphs that are

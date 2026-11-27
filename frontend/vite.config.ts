@@ -48,6 +48,6 @@ export default defineConfig({
   // Pre-bundle these on startup so the dev server never discovers it mid-session
   // (that leaves a stale dep cache: 504 "Outdated Optimize Dep" and a blank page).
   optimizeDeps: {
-    include: ['motion/react', 'voice-glow', '@floating-ui/dom', 'clsx', 'tailwind-merge'],
+    include: ['motion/react', 'voice-glow', '@floating-ui/dom', 'clsx', 'tailwind-merge', '@supabase/supabase-js'],
   },
 })

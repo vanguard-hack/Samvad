@@ -6,10 +6,11 @@ import { BrowserRouter } from "react-router"
 import "@/i18n"
 import "./index.css"
 import App from "./App"
-import { CLERK_PUBLISHABLE_KEY, ClerkProviderWithRouter } from "@/auth/clerk-provider"
+import { AuthProvider } from "@/auth/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { effectiveUiLanguage } from "@/i18n"
+import { SUPABASE_CONFIGURED } from "@/lib/supabase"
 import { ConfigErrorPage } from "@/pages/config-error-page"
 
 /** Base UI popups need the reading direction for RTL scripts (Urdu, Kashmiri, Sindhi). */
@@ -24,11 +25,11 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider defaultTheme="light" storageKey="samvaad.theme">
       <DirectionRoot>
         <TooltipProvider>
-          {CLERK_PUBLISHABLE_KEY ? (
+          {SUPABASE_CONFIGURED ? (
             <BrowserRouter>
-              <ClerkProviderWithRouter>
+              <AuthProvider>
                 <App />
-              </ClerkProviderWithRouter>
+              </AuthProvider>
             </BrowserRouter>
           ) : (
             <ConfigErrorPage />

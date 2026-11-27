@@ -19,7 +19,7 @@ with a per-patient history of every visit.
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?style=for-the-badge&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06b6d4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-Base%20UI-111111?style=for-the-badge&logo=shadcnui&logoColor=white)
-![Clerk](https://img.shields.io/badge/Auth-Clerk-6c47ff?style=for-the-badge&logo=clerk&logoColor=white)
+![Supabase](https://img.shields.io/badge/Auth-Supabase-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white)
 ![Languages](https://img.shields.io/badge/Languages-22%20Indian%20%2B%20English-0f9d58?style=for-the-badge)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 
@@ -46,7 +46,7 @@ with a per-patient history of every visit.
 
 | Area | What it does today |
 | --- | --- |
-| **Doctor sign-in** | Clerk. Only doctors have accounts; patients never sign in. |
+| **Doctor sign-in** | Supabase Auth with a 6-digit email code. Only doctors have accounts; patients never sign in. |
 | **Patients** | Home page. Searchable, sortable table, paged to fit the screen. |
 | **Interpreter** | Voice mode. Microphone-reactive orb and recorder on desktop and tablet, audio glow on phones. Audio is only measured in the browser; nothing is recorded, stored or sent. |
 | **Languages** | 22 scheduled Indian languages plus English, including right-to-left scripts. Hindi, Kannada and Tamil are AI drafts awaiting native review; the rest fall back to English. |
@@ -75,10 +75,10 @@ These apply to every feature:
 | --- | --- |
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | **UI** | shadcn/ui (Base UI), TanStack Table v9, Motion |
-| **Auth** | Clerk |
+| **Auth** | Supabase Auth (email one-time code) |
 | **Localisation** | react-i18next, Noto Sans fonts per script |
 | **App** | Progressive Web App (vite-plugin-pwa) |
-| **Planned** | FastAPI, Supabase, Cloudflare R2, Sarvam speech services |
+| **Planned** | FastAPI, Supabase database, Cloudflare R2, Sarvam speech services |
 
 ---
 
@@ -102,7 +102,7 @@ frontend/
 
 ## Getting Started
 
-**Prerequisites:** Node.js 20.9+ and a [Clerk](https://clerk.com) application.
+**Prerequisites:** Node.js 20.19+ and a [Supabase](https://supabase.com) project with email sign-in enabled and the Magic Link email template showing `{{ .Token }}`.
 
 ```bash
 cd frontend
@@ -112,7 +112,8 @@ npm install
 Create `frontend/.env.local` (git-ignored):
 
 ```
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 | Command | What it does |
