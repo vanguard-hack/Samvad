@@ -111,14 +111,18 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link to="/" aria-label={t("app.name")} />}>
+            <SidebarMenuButton
+              size="lg"
+              className="[&_svg]:size-7 group-data-[collapsible=icon]:[&_svg]:size-5"
+              render={<Link to="/" aria-label={t("app.name")} />}
+            >
               {collapsed ? <LogoMark className="size-5" /> : <Logo />}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip={t("nav.newConsultation")}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+              className="w-fit px-3 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
               render={<Link to={CONSULTATION_STEPS[0].path} onClick={() => setOpenMobile(false)} />}
             >
               <Plus />
