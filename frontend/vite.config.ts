@@ -10,7 +10,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      // No update prompt UI exists, so new versions must activate on their own;
+      // otherwise returning users stay on the old cached build.
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Samvad — Medical Interpreter',
