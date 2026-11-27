@@ -227,7 +227,7 @@
   },
   "dictation": {
     "listening": "डिक्टेशन चालू, सुन रहा है",
-    "stop": "बंद करने के लिए क्लिक करें, Esc या Ctrl+Shift+Space दबाएँ"
+    "stop": "बंद करने के लिए क्लिक करें, Esc या Ctrl+Space दबाएँ"
   },
   "newPatient": {
     "title": "नया मरीज़",

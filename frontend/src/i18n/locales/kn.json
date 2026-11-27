@@ -227,7 +227,7 @@
   },
   "dictation": {
     "listening": "ಡಿಕ್ಟೇಶನ್ ಆನ್, ಆಲಿಸುತ್ತಿದೆ",
-    "stop": "ನಿಲ್ಲಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ, Esc ಅಥವಾ Ctrl+Shift+Space ಒತ್ತಿ"
+    "stop": "ನಿಲ್ಲಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ, Esc ಅಥವಾ Ctrl+Space ಒತ್ತಿ"
   },
   "newPatient": {
     "title": "ಹೊಸ ರೋಗಿ",

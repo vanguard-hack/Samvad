@@ -227,7 +227,7 @@
   },
   "dictation": {
     "listening": "Dictation on, listening",
-    "stop": "Click, press Esc or Ctrl+Shift+Space to stop"
+    "stop": "Click, press Esc or Ctrl+Space to stop"
   },
   "newPatient": {
     "title": "New patient",

@@ -12,15 +12,9 @@ import { cn } from "@/lib/utils"
 const ORB_COLORS = ["#3f7be0", "#cfe2ff", "#16336e"] as const
 const POS_KEY = "samvad.dictation.pos"
 
-/**
- * Ctrl+Tab is the shortcut the doctor asked for, but desktop browsers keep it
- * for tab switching and never pass it to the page (it can work in an installed
- * app window). Ctrl+Shift+Space works everywhere.
- */
+/** Ctrl+Space toggles dictation (Fn and Ctrl+Tab never reach a web page). */
 function isDictationShortcut(e: KeyboardEvent) {
-  if (!e.ctrlKey || e.altKey || e.metaKey) return false
-  if (e.key === "Tab" && !e.shiftKey) return true
-  return e.shiftKey && e.code === "Space"
+  return e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.code === "Space"
 }
 
 function savedPosition() {
