@@ -168,8 +168,8 @@
       "mismatch": "The passwords don’t match."
     },
     "signInHint": "Sign in with Google or your email and password.",
-    "signUpTitle": "Create your Samvad account",
-    "signUpHint": "Use Google, or choose a password. We’ll email you once to confirm.",
+    "signUpTitle": "Create an account",
+    "signUpHint": "Enter your details below to create your Samvad account.",
     "google": "Continue with Google",
     "password": "Password",
     "passwordRule": "At least {{n}} characters.",
@@ -193,7 +193,10 @@
     "or": "or",
     "continue": "Continue",
     "firstName": "First name",
-    "lastName": "Last name"
+    "lastName": "Last name",
+    "emailUse": "We’ll use this to sign you in and send account emails. We never share it.",
+    "confirmHint": "Please confirm your password.",
+    "googleSignUp": "Sign up with Google"
   },
   "profile": {
     "title": "Your name",

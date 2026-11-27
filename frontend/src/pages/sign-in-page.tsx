@@ -6,6 +6,8 @@ import { useLocation, useNavigate } from "react-router"
 
 import { LogoMark } from "@/components/brand/logo"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
 import { errorKey, MIN_PASSWORD, RECOVERY_FLAG, type AuthError } from "@/auth/auth-errors"
@@ -50,6 +52,7 @@ export function SignInPage() {
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirm, setConfirm] = useState("")
   const [code, setCode] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,6 +77,7 @@ export function SignInPage() {
     setError(null)
     setErrorDetail(null)
     setPassword("")
+    setConfirm("")
   }
 
   /** Runs one Supabase call with the busy/error handling every form shares. */
@@ -178,7 +182,7 @@ export function SignInPage() {
       ? code.length === CODE_LENGTH
       : isEmail(email) &&
         (!passwordMode || password.length >= (mode === "signUp" ? MIN_PASSWORD : 1)) &&
-        (mode !== "signUp" || (firstName.trim() !== "" && lastName.trim() !== "")))
+        (mode !== "signUp" || (firstName.trim() !== "" && lastName.trim() !== "" && confirm === password)))
 
   const hint = {
     signIn: t("auth.signInHint"),
@@ -196,6 +200,122 @@ export function SignInPage() {
     </Button>
   )
 
+  // ── Create account: after shadcn's signup-01 block (Card + Field) ──────────
+  if (mode === "signUp") {
+    const mismatch = confirm.length > 0 && confirm !== password
+    return (
+      <main className="flex min-h-dvh w-full items-center justify-center bg-background p-6 md:p-10">
+        <div className="flex w-full max-w-sm flex-col gap-6">
+          <Card>
+            <CardHeader className="text-center">
+              <LogoMark className="mx-auto mb-2 size-9" />
+              <CardTitle className="text-lg">{t("auth.signUpTitle")}</CardTitle>
+              <CardDescription>{t("auth.signUpHint")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form ref={formRef} onSubmit={onSubmit} noValidate>
+                <FieldGroup>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field>
+                      <FieldLabel htmlFor="first-name">{t("auth.firstName")}</FieldLabel>
+                      <Input
+                        id="first-name"
+                        autoComplete="given-name"
+                        required
+                        autoFocus
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="last-name">{t("auth.lastName")}</FieldLabel>
+                      <Input
+                        id="last-name"
+                        autoComplete="family-name"
+                        required
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field>
+                    <FieldLabel htmlFor="email">{t("auth.email")}</FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="username"
+                      inputMode="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="doctor@clinic.in"
+                    />
+                    <FieldDescription>{t("auth.emailUse")}</FieldDescription>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
+                    <Input
+                      id="password"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={MIN_PASSWORD}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <FieldDescription>{t("auth.passwordRule", { n: MIN_PASSWORD })}</FieldDescription>
+                  </Field>
+                  <Field data-invalid={mismatch || undefined}>
+                    <FieldLabel htmlFor="confirm-password">{t("auth.confirmPassword")}</FieldLabel>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      aria-invalid={mismatch || undefined}
+                    />
+                    <FieldDescription>{mismatch ? t("auth.errors.mismatch") : t("auth.confirmHint")}</FieldDescription>
+                  </Field>
+
+                  {error && (
+                    <div id="auth-error" role="alert" className="flex flex-col gap-1">
+                      <p className="text-sm text-destructive">{error}</p>
+                      {errorDetail && <p className="font-mono text-xs break-words text-muted-foreground">{errorDetail}</p>}
+                    </div>
+                  )}
+
+                  <Field>
+                    <Button type="submit" disabled={!canSubmit}>
+                      {busy && <Loader2 className="animate-spin" />}
+                      {t("auth.createAccount")}
+                    </Button>
+                    <Button type="button" variant="outline" disabled={busy} onClick={google}>
+                      <GoogleMark />
+                      {t("auth.googleSignUp")}
+                    </Button>
+                    <FieldDescription className="px-6 text-center">
+                      {t("auth.haveAccount")}{" "}
+                      <button
+                        type="button"
+                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        onClick={() => go("signIn")}
+                      >
+                        {t("auth.verify")}
+                      </button>
+                    </FieldDescription>
+                  </Field>
+                </FieldGroup>
+              </form>
+            </CardContent>
+          </Card>
+          <FieldDescription className="px-6 text-center text-xs">{t("auth.doctorsOnly")}</FieldDescription>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="grid min-h-dvh place-items-center bg-background px-4 py-6">
       <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-none sm:p-8">
@@ -203,7 +323,7 @@ export function SignInPage() {
           {mode === "sent" ? <MailCheck className="size-9 text-primary" /> : <LogoMark className="size-9" />}
           <div className="flex flex-col gap-1">
             <h1 className="text-lg font-semibold">
-              {mode === "signUp" ? t("auth.signUpTitle") : mode === "sent" ? t("auth.checkEmail") : t("auth.title")}
+              {mode === "sent" ? t("auth.checkEmail") : t("auth.title")}
             </h1>
             <p className="text-sm text-muted-foreground">{hint}</p>
           </div>
@@ -225,34 +345,6 @@ export function SignInPage() {
             )}
 
             <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
-              {mode === "signUp" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-3">
-                    <label htmlFor="first-name" className="text-sm font-medium">
-                      {t("auth.firstName")}
-                    </label>
-                    <Input
-                      id="first-name"
-                      autoComplete="given-name"
-                      required
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <label htmlFor="last-name" className="text-sm font-medium">
-                      {t("auth.lastName")}
-                    </label>
-                    <Input
-                      id="last-name"
-                      autoComplete="family-name"
-                      required
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
               {!codeMode ? (
                 <>
                   <label htmlFor="email" className="text-sm font-medium">
@@ -261,7 +353,7 @@ export function SignInPage() {
                   <Input
                     id="email"
                     type="email"
-                    autoComplete={mode === "signUp" ? "username" : "email"}
+                    autoComplete="email"
                     inputMode="email"
                     required
                     autoFocus={!passwordMode}
@@ -318,18 +410,11 @@ export function SignInPage() {
                   <Input
                     id="password"
                     type="password"
-                    autoComplete={mode === "signUp" ? "new-password" : "current-password"}
-                    minLength={mode === "signUp" ? MIN_PASSWORD : undefined}
+                    autoComplete="current-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    aria-describedby={mode === "signUp" ? "password-rule" : undefined}
                   />
-                  {mode === "signUp" && (
-                    <p id="password-rule" className="text-xs text-muted-foreground">
-                      {t("auth.passwordRule", { n: MIN_PASSWORD })}
-                    </p>
-                  )}
                 </>
               )}
 
