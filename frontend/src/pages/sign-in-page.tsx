@@ -12,6 +12,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
 import { errorKey, MIN_PASSWORD, RECOVERY_FLAG, type AuthError } from "@/auth/auth-errors"
+import { passwordMeetsAll } from "@/auth/password-rules"
 import { supabase } from "@/lib/supabase"
 
 /** Supabase rate-limits OTP emails to one per 60 s per address by default. */
@@ -183,7 +184,7 @@ export function SignInPage() {
     (codeMode
       ? code.length === CODE_LENGTH
       : isEmail(email) &&
-        (!passwordMode || password.length >= (mode === "signUp" ? MIN_PASSWORD : 1)) &&
+        (!passwordMode || (mode === "signUp" ? passwordMeetsAll(password, MIN_PASSWORD) : password.length > 0)) &&
         (mode !== "signUp" || (fullName.trim() !== "" && confirm === password)))
 
   const hint = {

@@ -10,6 +10,7 @@ import { FullPageLoader } from "@/components/full-page-loader"
 import { PasswordStrengthInput } from "@/components/reui/password-strength-input"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { passwordMeetsAll } from "@/auth/password-rules"
 import { supabase } from "@/lib/supabase"
 
 /**
@@ -49,7 +50,7 @@ export function ResetPasswordPage() {
           <div className="flex flex-col gap-1">
             <h1 className="text-lg font-semibold">{t("auth.newPasswordTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              {session ? t("auth.passwordRule", { n: MIN_PASSWORD }) : t("auth.resetExpired")}
+              {session ? t("auth.newPasswordHint") : t("auth.resetExpired")}
             </p>
           </div>
         </div>
@@ -87,7 +88,7 @@ export function ResetPasswordPage() {
                 {mismatch ? t("auth.errors.mismatch") : error}
               </p>
             )}
-            <Button type="submit" disabled={busy || password.length < MIN_PASSWORD || confirm !== password}>
+            <Button type="submit" disabled={busy || !passwordMeetsAll(password, MIN_PASSWORD) || confirm !== password}>
               {busy && <Loader2 className="animate-spin" />}
               {t("auth.savePassword")}
             </Button>

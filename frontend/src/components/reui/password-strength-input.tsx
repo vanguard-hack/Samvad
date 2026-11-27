@@ -5,16 +5,11 @@ import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react"
 import { useId, useState, type ComponentProps } from "react"
 import { useTranslation } from "react-i18next"
 
+import { PASSWORD_RULES } from "@/auth/password-rules"
 import { Input } from "@/components/ui/input"
 import { cn } from "cn"
 
-const RULES = [
-  { key: "length", test: (p: string, min: number) => p.length >= min },
-  { key: "number", test: (p: string) => /[0-9]/.test(p) },
-  { key: "lower", test: (p: string) => /[a-z]/.test(p) },
-  { key: "upper", test: (p: string) => /[A-Z]/.test(p) },
-  { key: "special", test: (p: string) => /[^A-Za-z0-9\s]/.test(p) },
-] as const
+const RULES = PASSWORD_RULES
 
 const BAR_COLOR = ["bg-border", "bg-red-500", "bg-orange-500", "bg-amber-500", "bg-green-500", "bg-emerald-500"]
 

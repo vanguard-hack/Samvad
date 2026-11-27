@@ -8,29 +8,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 
-/** Existing first/last name, or a split of Google's full name. */
-function initialNames(meta: Record<string, unknown>) {
+/** The stored full name, or first + last (Google sometimes only sends those). */
+function initialName(meta: Record<string, unknown>) {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "")
-  const first = str(meta.first_name) || str(meta.given_name)
-  const last = str(meta.last_name) || str(meta.family_name)
-  if (first || last) return { first, last }
-  const [head = "", ...rest] = (str(meta.full_name) || str(meta.name)).split(/\s+/)
-  return { first: head, last: rest.join(" ") }
+  return (
+    str(meta.full_name) ||
+    [str(meta.first_name) || str(meta.given_name), str(meta.last_name) || str(meta.family_name)].filter(Boolean).join(" ") ||
+    str(meta.name)
+  )
 }
 
 /** The doctor's first and last name, shown in the account menu. */
 export function ProfilePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const start = initialNames((user?.user_metadata ?? {}) as Record<string, unknown>)
-  const [first, setFirst] = useState(start.first)
-  const [last, setLast] = useState(start.last)
+  const start = initialName((user?.user_metadata ?? {}) as Record<string, unknown>)
+  const [name, setName] = useState(start)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const changed = first.trim() !== start.first || last.trim() !== start.last
-  const valid = first.trim() !== "" && last.trim() !== ""
+  const clean = name.trim().replace(/\s+/g, " ")
+  const changed = clean !== start
+  const valid = clean !== ""
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -38,10 +38,10 @@ export function ProfilePage() {
     setBusy(true)
     setError(null)
     setSaved(false)
-    const f = first.trim()
-    const l = last.trim()
+    // First/last are derived from the one box (split on the first space).
+    const [first = "", ...rest] = clean.split(" ")
     // USER_UPDATED refreshes the session, so the account menu picks the new name up at once.
-    const { error } = await supabase.auth.updateUser({ data: { first_name: f, last_name: l, full_name: `${f} ${l}` } })
+    const { error } = await supabase.auth.updateUser({ data: { full_name: clean, first_name: first, last_name: rest.join(" ") } })
     setBusy(false)
     if (error) return setError(t(errorKey(error)))
     setSaved(true)
@@ -55,38 +55,19 @@ export function ProfilePage() {
       </div>
 
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3 rounded-xl border bg-card p-5" noValidate>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-first" className="text-sm font-medium">
-              {t("auth.firstName")}
-            </label>
-            <Input
-              id="profile-first"
-              autoComplete="given-name"
-              required
-              value={first}
-              onChange={(e) => {
-                setFirst(e.target.value)
-                setSaved(false)
-              }}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-last" className="text-sm font-medium">
-              {t("auth.lastName")}
-            </label>
-            <Input
-              id="profile-last"
-              autoComplete="family-name"
-              required
-              value={last}
-              onChange={(e) => {
-                setLast(e.target.value)
-                setSaved(false)
-              }}
-            />
-          </div>
-        </div>
+        <label htmlFor="profile-name" className="text-sm font-medium">
+          {t("auth.fullName")}
+        </label>
+        <Input
+          id="profile-name"
+          autoComplete="name"
+          required
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value)
+            setSaved(false)
+          }}
+        />
 
         <label htmlFor="profile-email" className="text-sm font-medium">
           {t("auth.email")}

@@ -171,7 +171,6 @@
     "signUpHint": "Enter your details below to create your Samvad account.",
     "google": "Continue with Google",
     "password": "Password",
-    "passwordRule": "At least {{n}} characters.",
     "forgot": "Forgot password?",
     "forgotHint": "Enter your email and we’ll send a link to choose a new password.",
     "sendReset": "Send reset link",
@@ -195,7 +194,8 @@
     "lastName": "Last name",
     "confirmHint": "Please confirm your password.",
     "googleSignUp": "Sign up with Google",
-    "fullName": "Full name"
+    "fullName": "Full name",
+    "newPasswordHint": "Choose a password that meets every requirement below."
   },
   "profile": {
     "title": "Your name",
