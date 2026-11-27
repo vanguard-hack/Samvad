@@ -15,9 +15,14 @@ RUN npm ci --no-audit --no-fund
 # Supabase secret / service_role key here.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_PUBLISHABLE_KEY
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL     VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 
 COPY frontend/ ./
+# Fail loudly (without printing values) instead of shipping a build that
+# can't sign anyone in. On Railway, add the variables and apply/deploy them.
+RUN test -n "$VITE_SUPABASE_URL" || { echo "ERROR: VITE_SUPABASE_URL is not set for this build" >&2; exit 1; }
+RUN test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "ERROR: VITE_SUPABASE_PUBLISHABLE_KEY is not set for this build" >&2; exit 1; }
 RUN npm run build
 
 # ── Serve ────────────────────────────────────────────────────────────────────
