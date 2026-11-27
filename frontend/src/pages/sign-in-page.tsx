@@ -12,9 +12,12 @@ import { supabase } from "@/lib/supabase"
 const RESEND_SECONDS = 60
 
 type Step = "email" | "code"
+type AuthError = { status?: number; code?: string; message?: string }
 
-function errorKey(error: { status?: number; code?: string; message?: string }) {
+function errorKey(error: AuthError) {
   if (error.status === 429 || error.code === "over_email_send_rate_limit") return "auth.errors.rateLimit"
+  if (error.code === "email_address_not_authorized") return "auth.errors.notAuthorized"
+  if (error.code === "email_address_invalid" || error.code === "validation_failed") return "auth.errors.badEmail"
   if (error.code === "otp_expired" || /expired|invalid/i.test(error.message ?? "")) return "auth.errors.badCode"
   if (error.code === "signup_disabled") return "auth.errors.signupDisabled"
   return "auth.errors.generic"
@@ -32,6 +35,13 @@ export function SignInPage() {
   const [code, setCode] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Supabase's own error text, shown small under the friendly message for support.
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
+
+  const fail = (e: AuthError) => {
+    setError(t(errorKey(e)))
+    setErrorDetail([e.code, e.message].filter(Boolean).join(": ") || null)
+  }
   const [cooldown, setCooldown] = useState(0)
 
   useEffect(() => {
@@ -44,12 +54,13 @@ export function SignInPage() {
     if (!supabase) return
     setBusy(true)
     setError(null)
+    setErrorDetail(null)
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
     })
     setBusy(false)
-    if (error) return setError(t(errorKey(error)))
+    if (error) return fail(error)
     setStep("code")
     setCode("")
     setCooldown(RESEND_SECONDS)
@@ -59,9 +70,10 @@ export function SignInPage() {
     if (!supabase) return
     setBusy(true)
     setError(null)
+    setErrorDetail(null)
     const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: "email" })
     setBusy(false)
-    if (error) return setError(t(errorKey(error)))
+    if (error) return fail(error)
     navigate(from, { replace: true })
   }
 
@@ -123,9 +135,10 @@ export function SignInPage() {
           )}
 
           {error && (
-            <p id="auth-error" role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
+            <div id="auth-error" role="alert" className="flex flex-col gap-1">
+              <p className="text-sm text-destructive">{error}</p>
+              {errorDetail && <p className="font-mono text-xs break-words text-muted-foreground">{errorDetail}</p>}
+            </div>
           )}
 
           <Button

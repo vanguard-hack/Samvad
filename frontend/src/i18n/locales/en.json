@@ -154,7 +154,9 @@
       "rateLimit": "Too many requests. Wait a minute and try again.",
       "badCode": "That code is wrong or has expired. Check it, or send a new one.",
       "signupDisabled": "New accounts are invite-only. Ask your clinic admin for access.",
-      "generic": "Something went wrong. Check your connection and try again."
+      "generic": "Something went wrong. Check your connection and try again.",
+      "notAuthorized": "This email can’t receive sign-in emails yet. The clinic’s email sender isn’t set up (custom SMTP).",
+      "badEmail": "That email address doesn’t look right."
     }
   }
 }
