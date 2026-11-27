@@ -150,6 +150,7 @@
     "doctorsOnly": "Sign-in is for doctors. Patients never need an account.",
     "account": "Account",
     "signOut": "Sign out",
+    "signingOut": "Signing out",
     "errors": {
       "rateLimit": "Too many requests. Wait a minute and try again.",
       "badCode": "That code is wrong or has expired. Check it, or send a new one.",

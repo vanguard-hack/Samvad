@@ -2,7 +2,7 @@ import {
   AudioLinesIcon,
   ClipboardCheckIcon,
   FileTextIcon,
-  LifeBuoyIcon,
+  HeadsetIcon,
   MessagesSquareIcon,
   PillIcon,
   SettingsIcon,
@@ -45,12 +45,12 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-export const NAV_FOOTER: NavItem[] = [
-  { key: "settings", to: "/settings", icon: SettingsIcon, phase: 6 },
-  { key: "help", to: "/help", icon: LifeBuoyIcon, phase: 6 },
-]
+export const NAV_FOOTER: NavItem[] = [{ key: "help", to: "/help", icon: HeadsetIcon, phase: 6 }]
 
-export const ALL_NAV_ITEMS = [...NAV_GROUPS.flatMap((g) => g.items), ...NAV_FOOTER]
+/** Reached from the account menu only, not the sidebar. */
+export const ACCOUNT_ITEMS: NavItem[] = [{ key: "settings", to: "/settings", icon: SettingsIcon, phase: 6 }]
+
+export const ALL_NAV_ITEMS = [...NAV_GROUPS.flatMap((g) => g.items), ...NAV_FOOTER, ...ACCOUNT_ITEMS]
 
 export function isActivePath(pathname: string, to: string) {
   // "/" is the Patients home; a patient record (/patients/:id) belongs to it too.
@@ -73,6 +73,6 @@ export function breadcrumbFor(pathname: string): { label: string; literal?: bool
     const item = group.items.find((i) => isActivePath(pathname, i.to))
     if (item) return [{ label: `nav.groups.${group.key}` }, { label: `nav.${item.key}` }]
   }
-  const footer = NAV_FOOTER.find((i) => isActivePath(pathname, i.to))
+  const footer = [...NAV_FOOTER, ...ACCOUNT_ITEMS].find((i) => isActivePath(pathname, i.to))
   return footer ? [{ label: `nav.${footer.key}` }] : []
 }

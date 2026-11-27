@@ -1,39 +1,13 @@
 import { ChevronRight } from "lucide-react"
 import { Fragment } from "react"
-import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 
 import { LanguageMenu } from "@/components/language-menu"
-import { ThemeSwitch } from "@/components/arc/theme-switch/theme-switch"
-import { useTheme } from "@/components/theme-provider"
-import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { AccountMenu } from "./account-menu"
 import { breadcrumbFor } from "./nav"
-
-/** uiarc ThemeSwitch (icon only), driven by the shadcn ThemeProvider. */
-function TopbarThemeSwitch() {
-  const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
-  const resolved =
-    theme === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme
-  return (
-    <ThemeSwitch
-      iconOnly
-      theme={resolved}
-      label={t("common.theme")}
-      onThemeChange={(next) => {
-        // Cross-fade the whole page where the browser supports it (as in the uiarc docs).
-        if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          document.startViewTransition(() => flushSync(() => setTheme(next)))
-        } else {
-          setTheme(next)
-        }
-      }}
-    />
-  )
-}
 
 export function AppTopbar() {
   const { t } = useTranslation()
@@ -81,15 +55,8 @@ export function AppTopbar() {
       </p>
 
       <div className="ms-auto flex items-center gap-2">
-        {/* Search is visual only until the patient API exists (Phase 3). */}
-        <Input
-          type="search"
-          placeholder={t("topbar.search")}
-          aria-label={t("topbar.search")}
-          className="hidden h-7 w-56 lg:block"
-        />
         <LanguageMenu />
-        <TopbarThemeSwitch />
+        <AccountMenu />
       </div>
     </header>
   )
