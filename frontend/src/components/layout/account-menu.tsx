@@ -7,8 +7,8 @@ import { useAuth } from "@/auth/auth-provider"
 import { UserMenu, type ThemePreference } from "@/components/arc/user-menu/user-menu"
 import { useTheme } from "@/components/theme-provider"
 
-/** uiarc User menu in the top bar: account links, theme, sign out. Bottom sheet on phones. */
-export function AccountMenu() {
+/** uiarc User menu at the sidebar bottom: account links, theme, sign out. Bottom sheet on phones. */
+export function AccountMenu({ showName = false, className }: { showName?: boolean; className?: string }) {
   const { t } = useTranslation()
   const { user, isLoaded, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -31,6 +31,9 @@ export function AccountMenu() {
   return (
     <UserMenu
       user={{ name, email }}
+      showName={showName}
+      align="start"
+      className={className}
       theme={theme}
       onThemeChange={changeTheme}
       items={[

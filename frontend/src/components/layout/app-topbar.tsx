@@ -6,7 +6,6 @@ import { Link, useLocation } from "react-router"
 import { LanguageMenu } from "@/components/language-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { AccountMenu } from "./account-menu"
 import { breadcrumbFor } from "./nav"
 
 export function AppTopbar() {
@@ -56,7 +55,6 @@ export function AppTopbar() {
 
       <div className="ms-auto flex items-center gap-2">
         <LanguageMenu />
-        <AccountMenu />
       </div>
     </header>
   )

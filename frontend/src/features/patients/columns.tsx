@@ -1,5 +1,5 @@
 import { createColumnHelper, type Column, type RowData } from "@tanstack/react-table"
-import { ArrowUpDown, Eye, ImageIcon } from "lucide-react"
+import { ArrowUpDown, Eye } from "lucide-react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
@@ -29,24 +29,9 @@ export function sortableHeader<TData extends RowData, TValue>(column: Column<Dat
   )
 }
 
-/** Language shown by its English name, plus a picture-mode marker when no voice support exists. */
+/** Language shown by its English name. */
 export function LanguageCell({ code }: { code: string }) {
-  const { t } = useTranslation()
-  const lang = getLanguage(code)
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span>{lang.englishName}</span>
-      {!lang.voice && (
-        <Tooltip>
-          <TooltipTrigger render={<span className="inline-flex text-caution" />}>
-            <ImageIcon className="size-3.5" />
-            <span className="sr-only">{t("patients.pictureMode")}</span>
-          </TooltipTrigger>
-          <TooltipContent>{t("patients.pictureMode")}</TooltipContent>
-        </Tooltip>
-      )}
-    </span>
-  )
+  return <span>{getLanguage(code).englishName}</span>
 }
 
 const columnHelper = createColumnHelper<DataTableFeatures, SamplePatient>()

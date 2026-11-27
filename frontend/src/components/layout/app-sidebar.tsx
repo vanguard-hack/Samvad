@@ -20,7 +20,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "cn"
-import { isActivePath, NAV_FOOTER, NAV_GROUPS, type NavGroup, type NavItem } from "./nav"
+import { AccountMenu } from "./account-menu"
+import { isActivePath, NAV_GROUPS, type NavGroup, type NavItem } from "./nav"
 
 function NavItems({ items }: { items: NavItem[] }) {
   const { t } = useTranslation()
@@ -96,7 +97,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="[&_svg]:size-7 group-data-[collapsible=icon]:[&_svg]:size-5"
+              className="[&_svg]:size-7 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&_svg]:size-5"
               render={<Link to="/" aria-label={t("app.name")} />}
             >
               {collapsed ? <LogoMark className="size-5" /> : <Logo />}
@@ -112,7 +113,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <NavItems items={NAV_FOOTER} />
+        <AccountMenu showName={!collapsed} className="w-full min-w-0" />
       </SidebarFooter>
 
       {/* Drag/click edge to fold the rail. */}
