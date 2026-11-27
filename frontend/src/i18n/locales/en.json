@@ -139,7 +139,7 @@
   },
   "auth": {
     "title": "Sign in to Samvad",
-    "emailHint": "We’ll email you a 6-digit code.",
+    "emailHint": "We’ll email you an 8-digit code.",
     "codeHint": "We sent an email to {{email}}. Enter the code from it, or open its sign-in link in this browser.",
     "email": "Email",
     "code": "Sign-in code",

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { errorKey, MIN_PASSWORD, RECOVERY_FLAG, type AuthError } from "@/auth/auth-errors"
 import { passwordMeetsAll } from "@/auth/password-rules"
 import { supabase } from "@/lib/supabase"
@@ -18,7 +18,7 @@ import { supabase } from "@/lib/supabase"
 /** Supabase rate-limits OTP emails to one per 60 s per address by default. */
 const RESEND_SECONDS = 60
 /** Supabase email OTP length (Auth → Providers → Email → "Email OTP Length"). */
-const CODE_LENGTH = 6
+const CODE_LENGTH = 8
 
 /**
  * signIn   email + password (default)      signUp  create an account with a password
@@ -354,7 +354,7 @@ export function SignInPage() {
                   <label htmlFor="code" className="text-sm font-medium">
                     {t("auth.code")}
                   </label>
-                  {/* shadcn Input OTP: six boxes, paste and SMS/email autofill supported. */}
+                  {/* shadcn Input OTP: one box per digit, paste and SMS/email autofill supported. */}
                   <InputOTP
                     id="code"
                     maxLength={CODE_LENGTH}
@@ -363,19 +363,13 @@ export function SignInPage() {
                     autoFocus
                     value={code}
                     onChange={setCode}
-                    containerClassName="justify-center"
+                    containerClassName="w-full justify-center"
                     aria-invalid={error ? true : undefined}
                     aria-describedby={error ? "auth-error" : undefined}
                   >
-                    <InputOTPGroup>
-                      {[0, 1, 2].map((i) => (
-                        <InputOTPSlot key={i} index={i} className="size-11 text-lg" />
-                      ))}
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      {[3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} className="size-11 text-lg" />
+                    <InputOTPGroup className="w-full max-w-80">
+                      {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                        <InputOTPSlot key={i} index={i} className="h-10 w-auto min-w-0 flex-1 text-lg" />
                       ))}
                     </InputOTPGroup>
                   </InputOTP>
