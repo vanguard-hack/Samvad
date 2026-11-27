@@ -15,7 +15,8 @@
     "comingSoon": "Coming soon",
     "loading": "Loading…",
     "skipToContent": "Skip to main content",
-    "phase": "Phase {{n}}"
+    "phase": "Phase {{n}}",
+    "cancel": "Cancel"
   },
   "steps": {
     "language": {
@@ -95,7 +96,8 @@
     "ageSex": "{{age}} yrs · {{sex}}",
     "sex": {
       "F": "Female",
-      "M": "Male"
+      "M": "Male",
+      "O": "Other"
     },
     "open": "Open record",
     "noVoice": "No voice support yet",
@@ -226,5 +228,65 @@
   "dictation": {
     "listening": "Dictation on, listening",
     "stop": "Click, press Esc or Ctrl+Shift+Space to stop"
+  },
+  "newPatient": {
+    "title": "New patient",
+    "description": "Add a patient in four short steps.",
+    "steps": "Steps",
+    "step": {
+      "details": "Details",
+      "language": "Language",
+      "health": "Health",
+      "review": "Review"
+    },
+    "continue": "Continue",
+    "back": "Back",
+    "create": "Add patient",
+    "done": "Done",
+    "age": "Age",
+    "sex": "Sex",
+    "ageSex": "Age / sex",
+    "phone": "Phone",
+    "optional": "(optional)",
+    "language": "Preferred language",
+    "languagePlaceholder": "Choose a language",
+    "languageHint": "Samvad speaks to the patient in this language.",
+    "noVoice": "Voice interpretation isn’t available in {{language}}. The visit will use picture mode, and a human interpreter should be arranged.",
+    "pictureMode": "Picture mode + human interpreter",
+    "communication": "Communication",
+    "canRead": "Can read this language",
+    "companion": "Usually comes with a family member or carer",
+    "allergies": "Known allergies",
+    "allergiesPlaceholder": "e.g. penicillin, peanuts",
+    "allergiesHint": "Leave empty if not known. Don’t write “none” unless the patient confirmed it.",
+    "conditions": "Long-term conditions",
+    "condition": {
+      "diabetes": "Diabetes",
+      "hypertension": "High blood pressure",
+      "asthma": "Asthma",
+      "heart": "Heart disease",
+      "thyroid": "Thyroid",
+      "kidney": "Kidney disease"
+    },
+    "medicines": "Current medicines",
+    "medicinesPlaceholder": "e.g. metformin 500 mg twice a day",
+    "noneRecorded": "Not recorded",
+    "consent": "Recording consent",
+    "consentOption": {
+      "given": "Patient agrees to Samvad saving audio, transcripts and records",
+      "declined": "Patient declined: nothing is saved after the session"
+    },
+    "created": "{{name}} added as {{id}}.",
+    "demoNote": "Sample data only: this patient is kept in this browser tab and disappears on reload.",
+    "errors": {
+      "nameRequired": "Enter the patient’s full name.",
+      "nameLong": "Name is too long (80 characters max).",
+      "ageRequired": "Enter the age.",
+      "ageRange": "Age must be 0 to 120.",
+      "sexRequired": "Choose one.",
+      "phoneInvalid": "Enter a 10-digit Indian mobile number.",
+      "languageRequired": "Choose the patient’s language.",
+      "consentRequired": "Record the patient’s answer before adding."
+    }
   }
 }

@@ -4,7 +4,7 @@
  * UI (doctors rarely need the full number on screen).
  */
 
-export type Sex = 'F' | 'M'
+export type Sex = 'F' | 'M' | 'O'
 export type PatientStatus = 'active' | 'followUp' | 'needsReview'
 
 export interface SamplePatient {
