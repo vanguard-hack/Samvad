@@ -250,7 +250,6 @@ export function SignInPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="doctor@clinic.in"
                     />
-                    <FieldDescription>{t("auth.emailUse")}</FieldDescription>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
@@ -310,7 +309,6 @@ export function SignInPage() {
               </form>
             </CardContent>
           </Card>
-          <FieldDescription className="px-6 text-center text-xs">{t("auth.doctorsOnly")}</FieldDescription>
         </div>
       </main>
     )
@@ -467,8 +465,6 @@ export function SignInPage() {
               </div>
             )}
           </>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">{t("auth.doctorsOnly")}</p>
       </div>
     </main>
   )

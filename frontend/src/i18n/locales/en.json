@@ -148,7 +148,6 @@
     "resend": "Resend code",
     "resendIn": "Resend in {{seconds}} s",
     "changeEmail": "Change email",
-    "doctorsOnly": "Sign-in is for doctors. Patients never need an account.",
     "account": "Account",
     "signOut": "Sign out",
     "signingOut": "Signing out",
@@ -194,7 +193,6 @@
     "continue": "Continue",
     "firstName": "First name",
     "lastName": "Last name",
-    "emailUse": "We’ll use this to sign you in and send account emails. We never share it.",
     "confirmHint": "Please confirm your password.",
     "googleSignUp": "Sign up with Google"
   },
