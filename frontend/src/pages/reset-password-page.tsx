@@ -7,6 +7,7 @@ import { errorKey, MIN_PASSWORD, RECOVERY_FLAG } from "@/auth/auth-errors"
 import { useAuth } from "@/auth/auth-provider"
 import { LogoMark } from "@/components/brand/logo"
 import { FullPageLoader } from "@/components/full-page-loader"
+import { PasswordStrengthInput } from "@/components/reui/password-strength-input"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
@@ -60,15 +61,14 @@ export function ResetPasswordPage() {
             <label htmlFor="new-password" className="text-sm font-medium">
               {t("auth.newPassword")}
             </label>
-            <Input
+            <PasswordStrengthInput
               id="new-password"
-              type="password"
               autoComplete="new-password"
               minLength={MIN_PASSWORD}
               required
               autoFocus
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onValueChange={setPassword}
             />
             <label htmlFor="confirm-password" className="text-sm font-medium">
               {t("auth.confirmPassword")}

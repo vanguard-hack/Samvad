@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 
 import { LogoMark } from "@/components/brand/logo"
+import { PasswordStrengthInput } from "@/components/reui/password-strength-input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -48,8 +49,7 @@ export function SignInPage() {
 
   const [mode, setMode] = useState<Mode>(location.pathname === "/sign-up" ? "signUp" : "signIn")
   const [sentKey, setSentKey] = useState("auth.confirmSent")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -126,14 +126,16 @@ export function SignInPage() {
       let signedIn = false
       void run(
         async () => {
-          const first = firstName.trim()
-          const last = lastName.trim()
+          // One "Full name" box; first/last are derived so the Profile page can show them.
+          const full = fullName.trim().replace(/\s+/g, " ")
+          const [first = "", ...rest] = full.split(" ")
+          const last = rest.join(" ")
           const res = await supabase!.auth.signUp({
             email: addr,
             password,
             options: {
               emailRedirectTo: window.location.origin,
-              data: { first_name: first, last_name: last, full_name: `${first} ${last}`.trim() },
+              data: { first_name: first, last_name: last, full_name: full },
             },
           })
           signedIn = Boolean(res.data.session) // no session = "Confirm email" is on
@@ -182,7 +184,7 @@ export function SignInPage() {
       ? code.length === CODE_LENGTH
       : isEmail(email) &&
         (!passwordMode || password.length >= (mode === "signUp" ? MIN_PASSWORD : 1)) &&
-        (mode !== "signUp" || (firstName.trim() !== "" && lastName.trim() !== "" && confirm === password)))
+        (mode !== "signUp" || (fullName.trim() !== "" && confirm === password)))
 
   const hint = {
     signIn: t("auth.signInHint"),
@@ -215,29 +217,17 @@ export function SignInPage() {
             <CardContent>
               <form ref={formRef} onSubmit={onSubmit} noValidate>
                 <FieldGroup>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field>
-                      <FieldLabel htmlFor="first-name">{t("auth.firstName")}</FieldLabel>
-                      <Input
-                        id="first-name"
-                        autoComplete="given-name"
-                        required
-                        autoFocus
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="last-name">{t("auth.lastName")}</FieldLabel>
-                      <Input
-                        id="last-name"
-                        autoComplete="family-name"
-                        required
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                      />
-                    </Field>
-                  </div>
+                  <Field>
+                    <FieldLabel htmlFor="full-name">{t("auth.fullName")}</FieldLabel>
+                    <Input
+                      id="full-name"
+                      autoComplete="name"
+                      required
+                      autoFocus
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </Field>
                   <Field>
                     <FieldLabel htmlFor="email">{t("auth.email")}</FieldLabel>
                     <Input
@@ -253,16 +243,14 @@ export function SignInPage() {
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
-                    <Input
+                    <PasswordStrengthInput
                       id="password"
-                      type="password"
                       autoComplete="new-password"
                       minLength={MIN_PASSWORD}
                       required
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onValueChange={setPassword}
                     />
-                    <FieldDescription>{t("auth.passwordRule", { n: MIN_PASSWORD })}</FieldDescription>
                   </Field>
                   <Field data-invalid={mismatch || undefined}>
                     <FieldLabel htmlFor="confirm-password">{t("auth.confirmPassword")}</FieldLabel>
