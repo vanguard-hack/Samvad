@@ -1,17 +1,13 @@
-import { motion, useReducedMotion, useSpring, useTransform } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMicrophone, VoiceBeam, type MicrophoneState } from "voice-glow"
 
 import { VoiceNote } from "@/components/agents/voice-note"
-import { VoiceOrb } from "@/components/agents/voice-orb"
 import { useTheme } from "@/components/theme-provider"
 import { Badge } from "@/components/ui/badge"
+import { LiveOrb } from "@/features/interpreter/live-orb"
 import { useMicLevel } from "@/features/interpreter/use-mic-level"
 import { useIsMobile } from "@/hooks/use-mobile"
-
-/** Same palette as the Sentinel voice mode (Samvad blue): base, highlight, shadow. */
-const ORB_COLORS = ["#3f7be0", "#cfe2ff", "#16336e"] as const
 
 /** beui's voice-note is 40px tall; zoom keeps its layout, hit areas and focus rings correct. */
 const RECORDER_ZOOM = { desktop: 1.5, mobile: 1.3 }
@@ -23,28 +19,6 @@ const STATUS_KEY: Record<MicrophoneState, string> = {
   denied: "interpreter.status.denied",
   unsupported: "interpreter.status.unsupported",
   error: "interpreter.status.error",
-}
-
-/**
- * ChatGPT-voice-mode style motion around the orb: the whole sphere swells with
- * the voice on a soft spring and breathes slowly while quiet.
- */
-function BreathingOrb({ level, active, label }: { level: ReturnType<typeof useMicLevel>; active: boolean; label: string }) {
-  const reduced = useReducedMotion()
-  const swell = useSpring(level, { stiffness: 260, damping: 18, mass: 0.6 })
-  const scale = useTransform(swell, (v) => 1 + Math.min(1, v) * 0.28)
-
-  return (
-    <motion.div
-      className="my-6 w-56 lg:w-64"
-      animate={reduced || !active ? { scale: 1 } : { scale: [1, 1.04, 1] }}
-      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-    >
-      <motion.div style={{ scale: reduced ? 1 : scale }}>
-        <VoiceOrb colors={ORB_COLORS} activity={level} active={active} aria-label={label} className="w-full" />
-      </motion.div>
-    </motion.div>
-  )
 }
 
 export function InterpreterPage() {
@@ -124,7 +98,7 @@ export function InterpreterPage() {
   // ── PC / tablet: beui voice orb + big beui voice-note recorder ───────────
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 p-6">
-      <BreathingOrb level={level} active={!failed} label={t(STATUS_KEY[mic.state])} />
+      <LiveOrb level={level} active={!failed} label={t(STATUS_KEY[mic.state])} className="my-6 w-56 lg:w-64" />
       {status}
       {recorder}
     </div>

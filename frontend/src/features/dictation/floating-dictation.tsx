@@ -1,15 +1,13 @@
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "motion/react"
+import { motion, useMotionValue, useReducedMotion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
 import { useMicrophone } from "voice-glow"
 
-import { VoiceOrb } from "@/components/agents/voice-orb"
+import { LiveOrb } from "@/features/interpreter/live-orb"
 import { useMicLevel } from "@/features/interpreter/use-mic-level"
 import { cn } from "@/lib/utils"
 
-/** Same Samvad blue as the interpreter orb: base, highlight, shadow. */
-const ORB_COLORS = ["#3f7be0", "#cfe2ff", "#16336e"] as const
 const POS_KEY = "samvad.dictation.pos"
 
 /** Ctrl+Space toggles dictation (Fn and Ctrl+Tab never reach a web page). */
@@ -43,8 +41,6 @@ export function FloatingDictation() {
   const live = mic.state === "live"
   const failed = mic.state === "denied" || mic.state === "unsupported" || mic.state === "error"
   const level = useMicLevel(on && live ? mic.stream : null)
-  const swell = useSpring(level, { stiffness: 260, damping: 18, mass: 0.6 })
-  const scale = useTransform(swell, (v) => 1 + Math.min(1, v) * 0.22)
 
   const start = useRef(savedPosition())
   const x = useMotionValue(start.current.x)
@@ -110,13 +106,12 @@ export function FloatingDictation() {
         aria-label={`${status}. ${t("dictation.stop")}`}
         title={`${status} · ${t("dictation.stop")}`}
         className={cn(
-          "pointer-events-auto absolute end-6 bottom-6 size-16 cursor-grab touch-none rounded-full bg-background p-1 shadow-lg ring-1 ring-border outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing",
+          // Just the orb, like ChatGPT: no frame, so it can swell freely past its box.
+          "pointer-events-auto absolute end-6 bottom-6 size-16 cursor-grab touch-none rounded-full outline-none drop-shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing",
           failed && "ring-2 ring-destructive",
         )}
       >
-        <motion.div style={{ scale: reduced ? 1 : scale }} className="size-full">
-          <VoiceOrb colors={ORB_COLORS} activity={level} active={!failed} aria-hidden="true" className="size-full" />
-        </motion.div>
+        <LiveOrb level={level} active={!failed} className="size-full" />
       </motion.button>
       <p role="status" aria-live="polite" className="sr-only">
         {status}
