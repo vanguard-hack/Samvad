@@ -1,5 +1,5 @@
 # Samvad frontend: build the Vite PWA, then serve it as static files with Caddy.
-# Railway builds this from the repo root (see railway.json).
+# Railway detects this Dockerfile at the repo root and builds it automatically.
 
 # ── Build ────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS build
