@@ -6,6 +6,7 @@ import {
   MessagesSquareIcon,
   PillIcon,
   SettingsIcon,
+  UserRoundIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react"
@@ -48,7 +49,10 @@ export const NAV_GROUPS: NavGroup[] = [
 export const NAV_FOOTER: NavItem[] = [{ key: "help", to: "/help", icon: HeadsetIcon, phase: 6 }]
 
 /** Reached from the account menu only, not the sidebar. */
-export const ACCOUNT_ITEMS: NavItem[] = [{ key: "settings", to: "/settings", icon: SettingsIcon, phase: 6 }]
+export const ACCOUNT_ITEMS: NavItem[] = [
+  { key: "profile", to: "/profile", icon: UserRoundIcon },
+  { key: "settings", to: "/settings", icon: SettingsIcon, phase: 6 },
+]
 
 export const ALL_NAV_ITEMS = [...NAV_GROUPS.flatMap((g) => g.items), ...NAV_FOOTER, ...ACCOUNT_ITEMS]
 

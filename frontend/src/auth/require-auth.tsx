@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Navigate, useLocation } from "react-router"
 
+import { RECOVERY_FLAG } from "@/auth/auth-errors"
 import { useAuth } from "@/auth/auth-provider"
 import { FullPageLoader } from "@/components/full-page-loader"
 
@@ -17,6 +18,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 /** Inverse gate: a signed-in doctor visiting /sign-in goes straight home. */
 export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
   const { isLoaded, user } = useAuth()
-  if (isLoaded && user) return <Navigate to="/" replace />
+  if (isLoaded && user) return <Navigate to={sessionStorage.getItem(RECOVERY_FLAG) ? "/reset-password" : "/"} replace />
   return <>{children}</>
 }

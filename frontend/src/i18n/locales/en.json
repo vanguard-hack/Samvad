@@ -67,7 +67,8 @@
       "clinical": "Clinical"
     },
     "breadcrumb": "Breadcrumb",
-    "interpreter": "Interpreter"
+    "interpreter": "Interpreter",
+    "profile": "Profile"
   },
   "topbar": {
     "search": "Search patients, IDs…"
@@ -157,7 +158,47 @@
       "signupDisabled": "New accounts are invite-only. Ask your clinic admin for access.",
       "generic": "Something went wrong. Check your connection and try again.",
       "notAuthorized": "This email can’t receive sign-in emails yet. The clinic’s email sender isn’t set up (custom SMTP).",
-      "badEmail": "That email address doesn’t look right."
-    }
+      "badEmail": "That email address doesn’t look right.",
+      "badLogin": "Email or password is wrong.",
+      "notConfirmed": "Confirm your email first. Check your inbox for the link.",
+      "exists": "An account with this email already exists. Sign in, use Google, or choose “Forgot password?” to set a password.",
+      "weakPassword": "Choose a stronger password.",
+      "samePassword": "Choose a password you haven’t used here before.",
+      "providerDisabled": "This sign-in method isn’t switched on yet.",
+      "mismatch": "The passwords don’t match."
+    },
+    "signInHint": "Sign in with Google or your email and password.",
+    "signUpTitle": "Create your Samvad account",
+    "signUpHint": "Use Google, or choose a password. We’ll email you once to confirm.",
+    "google": "Continue with Google",
+    "password": "Password",
+    "passwordRule": "At least {{n}} characters.",
+    "forgot": "Forgot password?",
+    "forgotHint": "Enter your email and we’ll send a link to choose a new password.",
+    "sendReset": "Send reset link",
+    "createAccount": "Create account",
+    "useCode": "Email me a sign-in code instead",
+    "noAccount": "New to Samvad?",
+    "haveAccount": "Already have an account?",
+    "backToSignIn": "Back to sign in",
+    "checkEmail": "Check your email",
+    "confirmSent": "We sent an email to {{email}}. Enter the code from it, or open its link to finish creating your account.",
+    "resetSent": "If {{email}} has an account, we emailed it a code. Enter it here, or open the email’s link, to choose a new password.",
+    "newPasswordTitle": "Choose a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "savePassword": "Save password",
+    "resetExpired": "This reset link has expired or was already used. Request a new one from the sign-in page.",
+    "changePassword": "Password",
+    "or": "or",
+    "continue": "Continue",
+    "firstName": "First name",
+    "lastName": "Last name"
+  },
+  "profile": {
+    "title": "Your name",
+    "hint": "This is how your name appears in Samvad.",
+    "save": "Save",
+    "saved": "Saved"
   }
 }

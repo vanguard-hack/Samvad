@@ -1,9 +1,10 @@
-import { Headset, Settings } from "lucide-react"
+import { Headset, KeyRound, Settings, UserRound } from "lucide-react"
 import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import { useAuth } from "@/auth/auth-provider"
+import { displayName } from "@/auth/display-name"
 import { UserMenu, type ThemePreference } from "@/components/arc/user-menu/user-menu"
 import { useTheme } from "@/components/theme-provider"
 
@@ -17,7 +18,7 @@ export function AccountMenu({ showName = false, className }: { showName?: boolea
   if (!isLoaded || !user) return <span aria-hidden="true" className="size-10 shrink-0 animate-pulse rounded-full bg-muted" />
 
   const email = user.email ?? ""
-  const name = (user.user_metadata?.full_name as string | undefined) || email.split("@")[0] || "—"
+  const name = displayName(user)
 
   const changeTheme = (next: ThemePreference) => {
     // Cross-fade the whole page where the browser supports it.
@@ -38,6 +39,8 @@ export function AccountMenu({ showName = false, className }: { showName?: boolea
       onThemeChange={changeTheme}
       items={[
         { label: t("nav.settings"), icon: <Settings size={16} />, onSelect: () => navigate("/settings") },
+        { label: t("nav.profile"), icon: <UserRound size={16} />, onSelect: () => navigate("/profile") },
+        { label: t("auth.changePassword"), icon: <KeyRound size={16} />, onSelect: () => navigate("/reset-password") },
         { label: t("nav.help"), icon: <Headset size={16} />, onSelect: () => navigate("/help") },
       ]}
       onSignOut={() => signOut().then(() => navigate("/sign-in", { replace: true }))}

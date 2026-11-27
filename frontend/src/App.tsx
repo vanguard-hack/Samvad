@@ -5,7 +5,9 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { ALL_NAV_ITEMS } from '@/components/layout/nav'
 import { InterpreterPage } from '@/pages/interpreter-page'
 import { PatientsPage } from '@/pages/patients-page'
+import { ProfilePage } from '@/pages/profile-page'
 import { SectionPlaceholderPage } from '@/pages/section-placeholder-page'
+import { ResetPasswordPage } from '@/pages/reset-password-page'
 import { SignInPage } from '@/pages/sign-in-page'
 import { StepPlaceholderPage } from '@/pages/step-placeholder-page'
 
@@ -23,8 +25,16 @@ export default function App() {
           </RedirectIfSignedIn>
         }
       />
-      {/* Supabase creates the account on first sign-in, so there is no separate sign-up. */}
-      <Route path="/sign-up" element={<Navigate to="/sign-in" replace />} />
+      <Route
+        path="/sign-up"
+        element={
+          <RedirectIfSignedIn>
+            <SignInPage />
+          </RedirectIfSignedIn>
+        }
+      />
+      {/* Signed in by the reset link itself, or from the account menu. */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route
         element={
@@ -37,6 +47,7 @@ export default function App() {
         <Route index element={<PatientsPage />} />
         <Route path="patients" element={<Navigate to="/" replace />} />
         <Route path="interpreter" element={<InterpreterPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route
           path="patients/:patientId"
           element={
