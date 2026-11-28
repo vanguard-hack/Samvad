@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -31,6 +31,8 @@ type Props = {
   focus?: CalendarFocus | null
   /** Called with each day whose month comes into view (main view or mini calendar), to load it. */
   onMonthShown?: (day: Date) => void
+  /** Start booking, at a slot clicked in the week/day grid or at the next half hour. */
+  onBook?: (date: string, start: string) => void
 }
 
 /**
@@ -39,7 +41,7 @@ type Props = {
  * month with booking dots, department filters, up next) beside a calendar with
  * Month, Week, Day and Agenda views. Read-only: doctors don't book here.
  */
-export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown }: Props) {
+export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown, onBook }: Props) {
   const { t, i18n } = useTranslation()
   const now = useNow()
   // Phones start on the agenda: a month grid has no room for names there.
@@ -87,7 +89,7 @@ export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown
     setAnchor(startOfDay(day))
     setView("day")
   }
-  const handlers = { onOpen, onDay: goDay }
+  const handlers = { onOpen, onDay: goDay, onSlot: onBook }
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card">
@@ -146,6 +148,12 @@ export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown
               ))}
             </SelectContent>
           </Select>
+          {onBook && (
+            <Button size="sm" className="ms-auto" onClick={() => onBook(...nextHalfHour(anchor))}>
+              <CalendarPlus />
+              {t("consultations.booking.button")}
+            </Button>
+          )}
         </header>
 
         <div className="min-h-0 flex-1">
@@ -168,4 +176,19 @@ export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown
       </section>
     </div>
   )
+}
+
+/** The first booking slot to suggest: the next half hour today, or 09:00 on a future day in view. */
+function nextHalfHour(anchor: Date): [string, string] {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const now = new Date()
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  if (anchor > now) return [iso(anchor), "09:00"]
+  const minute = now.getHours() * 60 + now.getMinutes() + 30 - ((now.getMinutes() + 30) % 30)
+  if (minute > 19 * 60 + 30) {
+    // Too late today: tomorrow morning.
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+    return [iso(tomorrow), "09:00"]
+  }
+  return [iso(now), `${pad(Math.floor(minute / 60))}:${pad(minute % 60)}`]
 }

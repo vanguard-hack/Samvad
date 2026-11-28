@@ -41,8 +41,9 @@ COPY deploy/start.sh /start.sh
 RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 COPY --from=build /app/frontend/dist /srv
 
-# Runtime variables (Railway service variables): SARVAM_API_KEY, plus the
-# VITE_SUPABASE_* values above, which the API reuses to check sign-ins.
+# Runtime variables (Railway service variables), read when the API starts: SARVAM_API_KEY,
+# AWS_* + BEDROCK_MODEL_ID, GOOGLE_OAUTH_* (+ optional GOOGLE_CALENDAR_*), WISPR_OAUTH_JSON,
+# plus the VITE_SUPABASE_* values above, which the API reuses to check sign-ins.
 ENV PYTHONUNBUFFERED=1
 # Railway injects PORT at runtime; the Caddyfile falls back to 8080.
 EXPOSE 8080

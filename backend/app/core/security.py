@@ -15,6 +15,7 @@ from app.core.config import get_settings
 
 _CACHE_SECONDS = 60
 _cache: dict[str, tuple[float, str]] = {}
+_emails: dict[str, str] = {}  # token hash -> the user's email, filled by verify_token
 _client = httpx.AsyncClient(timeout=10)
 
 
@@ -40,8 +41,17 @@ async def verify_token(token: str) -> str:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Could not reach the auth service") from exc
     if r.status_code != 200:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session expired, sign in again")
-    user_id = r.json().get("id", "")
+    user = r.json()
+    user_id = user.get("id", "")
     if len(_cache) > 1000:
         _cache.clear()
+        _emails.clear()
     _cache[key] = (now + _CACHE_SECONDS, user_id)
+    _emails[key] = user.get("email") or ""
     return user_id
+
+
+async def user_email(token: str) -> str:
+    """The signed-in user's email ("" if their account has none); 401 for an invalid token."""
+    await verify_token(token)
+    return _emails.get(hashlib.sha256(token.encode()).hexdigest(), "")

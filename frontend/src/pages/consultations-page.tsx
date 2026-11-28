@@ -5,12 +5,27 @@ import { useLocation, useNavigate } from "react-router"
 
 import { Button } from "@/components/ui/button"
 import type { AppointmentStatus } from "@/data/appointments"
-import { getAppointments, loadMonth, reloadAppointments, setAppointmentStatus, useAppointmentsState } from "@/data/appointments-store"
+import {
+  getAppointments,
+  loadMonth,
+  mergeAppointments,
+  reloadAppointments,
+  setAppointmentStatus,
+  useAppointmentsState,
+} from "@/data/appointments-store"
 import { AppointmentDialog } from "@/features/consultations/appointment-dialog"
+import type { BookingDraft } from "@/features/consultations/booking-api"
+import { BookingDialog } from "@/features/consultations/booking-dialog"
 import type { CalendarFocusState } from "@/features/consultations/calendar-focus"
 import { EventCalendar, type CalendarFocus } from "@/features/consultations/event-calendar"
 
-/** Consultations as an event calendar, synced from the backend; a consultation opens its details dialog. */
+/** Where the Patients page sends the doctor back after registering a patient for a booking. */
+export type BookingReturnState = { booking?: BookingDraft } | null
+
+/**
+ * Consultations as an event calendar, synced from the backend. A consultation opens
+ * its details; "Book" or a click on an empty slot books a new one.
+ */
 export function ConsultationsPage() {
   const { t } = useTranslation()
   // Shared with the assistants; each month is fetched when it comes into view.
@@ -18,19 +33,23 @@ export function ConsultationsPage() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [focus, setFocus] = useState<CalendarFocus | null>(null)
   const [statusError, setStatusError] = useState<string | null>(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [booking, setBooking] = useState<BookingDraft | null>(() => (location.state as BookingReturnState)?.booking ?? null)
   // Looked up by id so the dialog shows the latest status after a change.
   const open = appointments.find((a) => a.id === openId) ?? null
 
-  // An assistant sent the doctor here: show that appointment on the calendar, with its details open.
-  const location = useLocation()
-  const navigate = useNavigate()
+  // An assistant sent the doctor here: show that appointment, with its details open.
+  // (The Patients page sends a booking back the same way; it opens from the initial state above.)
   useEffect(() => {
-    const state = location.state as CalendarFocusState
-    if (!state?.focusAppointment && !state?.focusDate) return
-    const target = state.focusAppointment ? getAppointments().find((a) => a.id === state.focusAppointment) : undefined
-    const date = target?.date ?? state.focusDate
-    if (date) setFocus({ key: location.key, date, id: target?.id })
-    if (target) setOpenId(target.id)
+    const state = location.state as CalendarFocusState | null
+    if (!state) return
+    if (state.focusAppointment || state.focusDate) {
+      const target = state.focusAppointment ? getAppointments().find((a) => a.id === state.focusAppointment) : undefined
+      const date = target?.date ?? state.focusDate
+      if (date) setFocus({ key: location.key, date, id: target?.id })
+      if (target) setOpenId(target.id)
+    }
     // Clear the request, so going back or reloading doesn't open it again.
     navigate(location.pathname, { replace: true, state: null })
   }, [location, navigate])
@@ -65,7 +84,13 @@ export function ConsultationsPage() {
         </p>
       )}
       <div className="flex min-h-0 flex-1 flex-col">
-        <EventCalendar appointments={appointments} focus={focus} onOpen={(a) => setOpenId(a.id)} onMonthShown={loadMonth} />
+        <EventCalendar
+          appointments={appointments}
+          focus={focus}
+          onOpen={(a) => setOpenId(a.id)}
+          onMonthShown={loadMonth}
+          onBook={(date, start) => setBooking({ date, start })}
+        />
       </div>
       <AppointmentDialog
         appointment={open}
@@ -74,6 +99,14 @@ export function ConsultationsPage() {
           setStatusError(null)
         }}
         onStatusChange={changeStatus}
+      />
+      <BookingDialog
+        draft={booking}
+        onOpenChange={(next) => !next && setBooking(null)}
+        onBooked={(appointment) => {
+          mergeAppointments([appointment])
+          setFocus({ key: appointment.id, date: appointment.date, id: appointment.id })
+        }}
       />
     </div>
   )

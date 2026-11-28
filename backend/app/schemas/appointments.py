@@ -1,11 +1,11 @@
 """Appointment schemas, mirroring the frontend's Consultations page.
 
-See frontend/src/data/appointments.ts (SampleAppointment, SampleDoctor) and
-frontend/src/data/sample.ts (SamplePatient). JSON uses the frontend's camelCase
-names; Python code uses snake_case.
+See frontend/src/data/appointments.ts (SampleAppointment, SampleDoctor). JSON
+uses the frontend's camelCase names; Python code uses snake_case.
 """
 
 import datetime as dt
+import uuid
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer, field_validator, model_validator
@@ -18,6 +18,7 @@ AppointmentStatus = Literal["scheduled", "active", "needsReview", "followUp", "c
 Sex = Literal["F", "M", "O"]
 
 MAX_RANGE_DAYS = 92
+MAX_SLOT_MINUTES = 240
 
 
 class CamelModel(BaseModel):
@@ -38,24 +39,39 @@ class DoctorDetails(CamelModel):
     department: Department
 
 
-class AppointmentDetails(CamelModel):
-    """Everything about an appointment except its id. Date and times are in the clinic's time zone."""
+class TimeSlot(CamelModel):
+    """A slot on one day, in the clinic's time zone."""
 
-    patient: PatientDetails
-    doctor: DoctorDetails
     date: dt.date
     start: dt.time = Field(description="HH:mm, 24-hour")
     end: dt.time = Field(description="HH:mm, 24-hour")
+
+    @model_validator(mode="after")
+    def valid_slot(self) -> "TimeSlot":
+        if self.end <= self.start:
+            raise ValueError("end must be after start")
+        minutes = (self.end.hour * 60 + self.end.minute) - (self.start.hour * 60 + self.start.minute)
+        if minutes > MAX_SLOT_MINUTES:
+            raise ValueError(f"a slot can be at most {MAX_SLOT_MINUTES} minutes")
+        return self
+
+    @field_serializer("start", "end")
+    def hh_mm(self, value: dt.time) -> str:
+        return value.strftime("%H:%M")
+
+    def overlaps(self, other: "TimeSlot") -> bool:
+        return self.date == other.date and self.start < other.end and other.start < self.end
+
+
+class AppointmentDetails(TimeSlot):
+    """Everything about an appointment except its id."""
+
+    patient: PatientDetails
+    doctor: DoctorDetails
     language: str = Field(description="LANGUAGES code the consultation is held in, e.g. 'kn'")
     visit: int = Field(default=1, ge=1, description="The patient's nth visit")
     status: AppointmentStatus = "scheduled"
     notes: str | None = Field(default=None, max_length=500)
-    meeting_link: str | None = Field(
-        default=None,
-        max_length=500,
-        pattern=r"^https://\S+$",
-        description="Video call link (Google Meet, Zoom, ...); makes the event a joinable meeting",
-    )
 
     @field_validator("language")
     @classmethod
@@ -64,25 +80,13 @@ class AppointmentDetails(CamelModel):
             raise ValueError("unsupported language code")
         return code
 
-    @model_validator(mode="after")
-    def end_after_start(self) -> "AppointmentDetails":
-        if self.end <= self.start:
-            raise ValueError("end must be after start")
-        return self
-
-    @field_serializer("start", "end")
-    def hh_mm(self, value: dt.time) -> str:
-        return value.strftime("%H:%M")
-
-
-class AppointmentCreate(AppointmentDetails):
-    """POST /api/appointments body. The server assigns the appointment id."""
-
 
 class Appointment(AppointmentDetails):
     id: str = Field(pattern=r"^APT-\d{4,}$", examples=["APT-2021"])
     calendar_event_id: str | None = None
     calendar_link: str | None = None
+    meeting_link: str | None = Field(default=None, description="The Google Meet link of the consultation")
+    attendees: list[str] = Field(default_factory=list, description="Emails invited to the calendar event")
 
     # The flat ids of the frontend's SampleAppointment, next to the nested details.
     @computed_field
@@ -94,6 +98,34 @@ class Appointment(AppointmentDetails):
     @property
     def doctor_id(self) -> str:
         return self.doctor.id
+
+
+class BookingIn(TimeSlot):
+    """POST /api/appointments body: a slot, a patient from the database and a doctor.
+
+    The server fills in the rest from the database (patient details, language, visit
+    number), assigns the APT-#### id, adds a Google Meet link and emails the invite to
+    the signed-in user.
+    """
+
+    patient_id: uuid.UUID = Field(description="The patient's database id (patients.id)")
+    doctor_id: str = Field(pattern=r"^DOC-\d{2,}$", description="The doctor's code, e.g. DOC-03")
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class DoctorSlot(CamelModel):
+    """A doctor for the booking form, with whether they are free in the slot asked about."""
+
+    id: str
+    name: str
+    department: Department
+    available: bool
+    recommended: bool = Field(description="Matches the patient's department (from their clinic or conditions)")
+
+
+class DoctorsOut(CamelModel):
+    doctors: list[DoctorSlot]
+    recommended_department: Department | None = None
 
 
 class AppointmentStatusIn(CamelModel):

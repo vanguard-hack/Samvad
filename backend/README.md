@@ -86,6 +86,31 @@ reaches GitHub or the image. Supply it at runtime instead:
    `fetch('/api/samvad-agent/auth/status',{headers:{Authorization:'Bearer '+JSON.parse(localStorage[Object.keys(localStorage).find(k=>k.endsWith('-auth-token'))]).access_token}}).then(r=>r.json()).then(console.log)`.
    Open the `auth_url` it prints within `WISPR_AUTH_TIMEOUT_S`; the tokens are saved to the volume.
 
+## Google Calendar (appointments)
+
+Consultations are booked from the Consultations page: pick a slot, a patient and a free
+doctor (`GET /api/doctors`, `POST /api/appointments`). Each booking is a Google Calendar
+event with a Google Meet link; the invite, with the patient and doctor details, is emailed
+to the signed-in user. Appointments are mirrored in the Supabase `appointments` table;
+doctors come from the `doctors` table (both in `supabase/migrations`).
+
+The backend signs in to Google as the clinic's Google account (OAuth), from env variables only:
+
+1. Google Cloud Console, in the project with the Calendar API enabled: *APIs & Services →
+   OAuth consent screen*, user type External, add the account as a test user and the
+   `.../auth/calendar.events` scope.
+2. *Credentials → Create credentials → OAuth client ID → Desktop app*. Put its id and secret
+   in `backend/.env.local` as `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
+3. `python scripts/google_oauth_login.py` opens Google sign-in and saves
+   `GOOGLE_OAUTH_REFRESH_TOKEN` to `.env.local`. Restart the backend.
+4. **Railway:** add `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+   `GOOGLE_OAUTH_REFRESH_TOKEN`, and optionally `GOOGLE_CALENDAR_ID` and
+   `GOOGLE_CALENDAR_TIMEZONE`, as service variables (copy the values from `.env.local`).
+   They are read at runtime, so no rebuild is needed; redeploy to apply.
+
+While the consent screen is in *Testing*, Google expires the refresh token after 7 days: run the
+script again, or set the app to *In production* (an unverified app you use yourself is fine).
+
 ## Production
 
 The root `Dockerfile` runs this API and Caddy in one container; Caddy serves

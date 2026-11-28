@@ -3,14 +3,15 @@
 The title is for people:  "APT-2021 · Lakshmi Narayan (SMV-1001) · Dr. Farah Siddiqui".
 The description is for people and for us: one "Label: value" line per field,
 so it reads well in Google Calendar and parses back into an Appointment.
-A meeting link, when given, is also the event's location, so Google Calendar
-shows it as the place to join the call.
+Every appointment is a Google Meet call; its guests (the signed-in user) get
+the invite email with the Meet link and these details.
 The event's own start and end are the slot (moving the event in Google Calendar
 moves the appointment). Two private extended properties tie the event to Samvad:
 the appointment id and the owning doctor's user id, used to filter on sync.
 """
 
 import datetime as dt
+import uuid
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -39,7 +40,6 @@ LABELS: dict[str, str] = {
     "Visit": "visit",
     "Status": "status",
     "Notes": "notes",
-    "Meeting link": "meeting_link",
 }
 
 
@@ -64,16 +64,28 @@ def event_description(a: Appointment) -> str:
 
 
 def to_event(a: Appointment, owner_id: str, tz: ZoneInfo) -> dict[str, Any]:
-    """events.insert body."""
+    """events.insert body: the appointment as a Google Meet call, with `a.attendees` as guests."""
     return {
         "summary": event_title(a),
         "description": event_description(a),
         "start": {"dateTime": dt.datetime.combine(a.date, a.start).isoformat(), "timeZone": tz.key},
         "end": {"dateTime": dt.datetime.combine(a.date, a.end).isoformat(), "timeZone": tz.key},
         "extendedProperties": {"private": {PROP_APPOINTMENT_ID: a.id, PROP_OWNER: owner_id}},
-        # Calendar apps show the location's link as the place to join the call.
-        **({"location": a.meeting_link} if a.meeting_link else {}),
+        "attendees": [{"email": email} for email in a.attendees],
+        "conferenceData": {
+            "createRequest": {"requestId": uuid.uuid4().hex, "conferenceSolutionKey": {"type": "hangoutsMeet"}}
+        },
     }
+
+
+def meet_link(event: dict[str, Any]) -> str | None:
+    """The event's Google Meet link, if it has one."""
+    if event.get("hangoutLink"):
+        return event["hangoutLink"]
+    for entry in (event.get("conferenceData") or {}).get("entryPoints", []):
+        if entry.get("entryPointType") == "video" and entry.get("uri"):
+            return entry["uri"]
+    return None
 
 
 def from_event(event: dict[str, Any], tz: ZoneInfo) -> Appointment | None:
@@ -90,7 +102,9 @@ def from_event(event: dict[str, Any], tz: ZoneInfo) -> Appointment | None:
         end=end.time(),
         calendar_event_id=event.get("id"),
         calendar_link=event.get("htmlLink"),
+        attendees=[g["email"] for g in event.get("attendees", []) if g.get("email") and not g.get("organizer")],
     )
+    fields["meeting_link"] = meet_link(event)
     try:
         return Appointment.model_validate(_nest(fields))
     except ValidationError:

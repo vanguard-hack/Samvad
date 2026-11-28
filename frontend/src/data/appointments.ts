@@ -30,6 +30,7 @@ export interface SampleAppointment {
   notes?: string | null
   meetingLink?: string | null
   calendarLink?: string | null
+  attendees?: string[]
 }
 
 /** The patient as booked on an appointment (the backend's appointment record). */

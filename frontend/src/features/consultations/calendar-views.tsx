@@ -43,6 +43,8 @@ type Handlers = {
   onOpen: (appointment: SampleAppointment) => void
   /** Show one day in the day view. */
   onDay: (day: Date) => void
+  /** Book at an empty spot of the week/day grid: the day and the half hour clicked. */
+  onSlot?: (date: string, start: string) => void
 }
 
 // ── Month ────────────────────────────────────────────────────────────────────
@@ -196,6 +198,7 @@ export function TimeGridView({
   highlightId,
   onOpen,
   onDay,
+  onSlot,
 }: Handlers & {
   days: Date[]
   now: Date
@@ -204,7 +207,7 @@ export function TimeGridView({
   detailed?: boolean
   highlightId?: string
 }) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const lang = i18n.language
   const byDay = useMemo(() => groupByDate(appointments), [appointments])
   const columns = `3.5rem repeat(${days.length}, minmax(0, 1fr))`
@@ -265,7 +268,17 @@ export function TimeGridView({
             const lanes = layoutLanes(items)
             const today = isSameDay(d, now)
             return (
-              <div key={iso} className={cn("relative border-s", today && "bg-primary/[0.03]")}>
+              <div
+                key={iso}
+                className={cn("relative border-s", today && "bg-primary/[0.03]", onSlot && "cursor-copy")}
+                title={onSlot ? t("consultations.booking.clickToBook") : undefined}
+                onClick={(e) => {
+                  if (!onSlot || e.target !== e.currentTarget) return // appointments open themselves
+                  const y = e.clientY - e.currentTarget.getBoundingClientRect().top
+                  const minute = startHour * 60 + Math.floor(((y / HOUR_PX) * 60) / 30) * 30
+                  onSlot(iso, `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`)
+                }}
+              >
                 {lines.map((h) => (
                   <div key={h} className="pointer-events-none absolute inset-x-0 border-t" style={{ top: (h - startHour) * HOUR_PX }} />
                 ))}

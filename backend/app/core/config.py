@@ -55,12 +55,18 @@ class Settings:
     public_base_url: str = "http://localhost:8000"
     wispr_auth_timeout_s: int = 600
     wispr_open_browser: bool = False  # open the sign-in page on the server's own desktop (local dev only)
-    # Appointments: Google Calendar through a service account (no user OAuth). The key is a
-    # secret (the JSON key file's contents, or base64 of it); the calendar is shared with
-    # the service account's email.
-    google_service_account_json: str = ""
+    # Appointments: Google Calendar, signed in as the clinic's Google account (OAuth), so events
+    # get Google Meet links and email invites. scripts/google_oauth_login.py gets the refresh
+    # token. All three are secrets (Railway variables, or backend/.env.local).
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    google_oauth_refresh_token: str = ""
     google_calendar_id: str = ""
     google_calendar_timezone: str = "Asia/Kolkata"
+
+    @property
+    def google_oauth_enabled(self) -> bool:
+        return bool(self.google_oauth_client_id and self.google_oauth_client_secret and self.google_oauth_refresh_token)
 
     @property
     def wispr_redirect_uri(self) -> str:
@@ -89,8 +95,10 @@ def get_settings() -> Settings:
         public_base_url=env("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/"),
         wispr_auth_timeout_s=int(env("WISPR_AUTH_TIMEOUT_S", "600")),
         wispr_open_browser=env("WISPR_OPEN_BROWSER", "false").lower() == "true",
-        google_service_account_json=env("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip(),
-        # Unset: the service account's own calendar ("primary").
+        google_oauth_client_id=env("GOOGLE_OAUTH_CLIENT_ID", "").strip(),
+        google_oauth_client_secret=env("GOOGLE_OAUTH_CLIENT_SECRET", "").strip(),
+        google_oauth_refresh_token=env("GOOGLE_OAUTH_REFRESH_TOKEN", "").strip(),
+        # Unset: the signed-in account's main calendar ("primary").
         google_calendar_id=env("GOOGLE_CALENDAR_ID", "").strip() or "primary",
         google_calendar_timezone=env("GOOGLE_CALENDAR_TIMEZONE", "Asia/Kolkata").strip(),
     )

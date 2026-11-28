@@ -182,6 +182,9 @@ cp .env.example .env                                    # then fill it in (see b
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | AWS key allowed to call Bedrock |
 | `AWS_REGION` | Bedrock region, e.g. `eu-west-3` |
 | `BEDROCK_MODEL_ID` | e.g. `eu.anthropic.claude-sonnet-4-6` |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` | Google sign-in for booking consultations (Meet links, invites); see `backend/README.md` |
+| `GOOGLE_CALENDAR_ID`, `GOOGLE_CALENDAR_TIMEZONE` | Optional: which calendar (default `primary`) and its time zone (default `Asia/Kolkata`) |
+| `WISPR_OAUTH_JSON` | Wispr Flow sign-in for the Samvad Assistant's meeting notes; see `backend/README.md` |
 
 Check it at http://localhost:8000/api/health (`"speech": true` means Sarvam is configured).
 Run the tests with `.venv/Scripts/python -m pytest -q`.
@@ -220,7 +223,9 @@ with Caddy and runs the API on an internal port; Caddy forwards `/api/*` to it.
 Railway service variables:
 
 - **Build time:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
-- **Run time:** `SARVAM_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `BEDROCK_MODEL_ID`
+- **Run time:** `SARVAM_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `BEDROCK_MODEL_ID`,
+  `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN`
+  (optional: `GOOGLE_CALENDAR_ID`, `GOOGLE_CALENDAR_TIMEZONE`), `WISPR_OAUTH_JSON`, `PUBLIC_BASE_URL`
 
 GitHub Actions runs the frontend lint and build, the backend tests, then builds the Docker image
 and checks that the site and `/api/health` respond.

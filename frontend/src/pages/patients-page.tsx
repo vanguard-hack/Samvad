@@ -1,6 +1,7 @@
 import { ArrowDownWideNarrow, ChevronDown, Loader2, Plus, Search, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
+import { useLocation, useNavigate } from "react-router"
 
 import { DataTable } from "@/components/data-table/data-table"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +35,8 @@ import { QueueDetailsDialog } from "@/features/patients/queue-details-dialog"
 import { byDue, byLastEvent, byUrgency, PRIORITY_OPTIONS } from "@/features/patients/queue-meta"
 import { addSessionPatient, isSessionPatient, listSessionPatients, updateSessionPatient } from "@/features/patients/session-patients"
 import { cn } from "@/lib/utils"
+import type { BookingDraft } from "@/features/consultations/booking-api"
+import type { BookingReturnState } from "@/pages/consultations-page"
 
 const SORTS = { urgency: byUrgency, due: byDue, lastEvent: byLastEvent, name: (a: PatientRow, b: PatientRow) => a.full_name.localeCompare(b.full_name) }
 type SortKey = keyof typeof SORTS
@@ -51,8 +54,19 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [updateError, setUpdateError] = useState(false)
-  const [adding, setAdding] = useState(false)
+  // Consultations → Book → "New patient": after registering, go back to the booking with them selected.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [bookingDraft, setBookingDraft] = useState<BookingDraft | null>(
+    () => (location.state as { newPatientForBooking?: BookingDraft } | null)?.newPatientForBooking ?? null,
+  )
+  const [bookPatientId, setBookPatientId] = useState<string | null>(null)
+  const [adding, setAdding] = useState(() => bookingDraft !== null)
   const [editing, setEditing] = useState<PatientRow | null>(null)
+  useEffect(() => {
+    // A reload shouldn't reopen the registration.
+    if (location.state) navigate(location.pathname, { replace: true, state: null })
+  }, [location, navigate])
   // Language for a registration the voice assistant started (auto voice + auto save).
   const [autoLanguage, setAutoLanguage] = useState<string | null>(null)
 
@@ -143,6 +157,7 @@ export function PatientsPage() {
       }
       setPatients((list) => [row, ...list])
       setTab("needs_action")
+      if (bookingDraft) setBookPatientId(row.id)
       return patientCode(row.patient_number)
     }
     const now = new Date().toISOString()
@@ -293,7 +308,14 @@ export function PatientsPage() {
         open={adding}
         onOpenChange={(o) => {
           setAdding(o)
-          if (!o) setAutoLanguage(null)
+          if (o) return
+          setAutoLanguage(null)
+          if (bookingDraft) {
+            // Back to the booking; a patient who wasn't saved (no consent) can't be booked, so none is preselected.
+            const booking: BookingDraft = { ...bookingDraft, patientId: bookPatientId ?? undefined }
+            setBookingDraft(null)
+            navigate("/consultations", { state: { booking } satisfies BookingReturnState })
+          }
         }}
         onCreate={onCreate}
         autoLanguage={autoLanguage}
