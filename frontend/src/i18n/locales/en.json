@@ -105,7 +105,10 @@
     "yesterday": "Yesterday",
     "daysAgo": "{{count}} days ago",
     "phoneMasked": "Masked for privacy",
-    "pictureMode": "Picture mode — no voice for this language"
+    "pictureMode": "Picture mode — no voice for this language",
+    "notSaved": "Not saved",
+    "loadError": "Couldn’t load patients.",
+    "retry": "Try again"
   },
   "section": {
     "title": "{{name}} is coming in phase {{n}}",
@@ -119,8 +122,7 @@
     "next": "Next"
   },
   "interpreter": {
-    "notConnected": "Interpretation not connected yet",
-    "privacy": "Audio is measured in this browser only. Nothing is recorded or sent.",
+    "privacy": "Speech is sent to Sarvam AI to transcribe and speak. Nothing is stored.",
     "micHelp": "Allow microphone access in your browser’s address bar, then try again.",
     "status": {
       "idle": "Ready",
@@ -128,7 +130,8 @@
       "listening": "Listening",
       "denied": "Microphone access was blocked",
       "unsupported": "This browser can’t use a microphone",
-      "error": "Microphone error"
+      "error": "Microphone error",
+      "finishing": "Finishing transcript…"
     },
     "note": {
       "record": "Start recording",
@@ -137,7 +140,10 @@
       "recording": "Recording",
       "sent": "Recording finished"
     },
-    "captured": "Recording ended ({{seconds}} s). Nothing was saved."
+    "sttUnavailable": "Transcription unavailable, try again",
+    "readAloud": "Read aloud",
+    "stopSpeaking": "Stop",
+    "ttsError": "Couldn’t play the voice. Try again."
   },
   "auth": {
     "title": "Sign in to Samvad",
@@ -227,7 +233,9 @@
   },
   "dictation": {
     "listening": "Dictation on, listening",
-    "stop": "Click, press Esc or Ctrl+Space to stop"
+    "stop": "Click, press Esc or Ctrl+Space to stop",
+    "unavailable": "Dictation unavailable, try again",
+    "clear": "Clear text"
   },
   "newPatient": {
     "title": "New patient",
@@ -250,7 +258,7 @@
     "optional": "(optional)",
     "language": "Preferred language",
     "languagePlaceholder": "Choose a language",
-    "languageHint": "Samvad speaks to the patient in this language.",
+    "languageHint": "Samvad asks the patient each question aloud in this language and fills in the answers.",
     "noVoice": "Voice interpretation isn’t available in {{language}}. The visit will use picture mode, and a human interpreter should be arranged.",
     "pictureMode": "Picture mode + human interpreter",
     "communication": "Communication",
@@ -277,7 +285,6 @@
       "declined": "Patient declined: nothing is saved after the session"
     },
     "created": "{{name}} added as {{id}}.",
-    "demoNote": "Sample data only: this patient is kept in this browser tab and disappears on reload.",
     "errors": {
       "nameRequired": "Enter the patient’s full name.",
       "nameLong": "Name is too long (80 characters max).",
@@ -287,6 +294,52 @@
       "phoneInvalid": "Enter a 10-digit Indian mobile number.",
       "languageRequired": "Choose the patient’s language.",
       "consentRequired": "Record the patient’s answer before adding."
-    }
+    },
+    "voice": {
+      "patientSaid": "Patient said: “{{text}}”",
+      "done": "All questions asked. Check the details, then add the patient.",
+      "missed": "Not captured, please fill in: {{fields}}",
+      "error": "Voice questions stopped. Fill the form by hand or try again.",
+      "stop": "Stop voice",
+      "again": "Ask again",
+      "phase": {
+        "starting": "Starting voice…",
+        "speaking": "Samvad is asking",
+        "listening": "Listening to the patient…",
+        "thinking": "Working…"
+      },
+      "field": {
+        "name": "name",
+        "age": "age",
+        "sex": "sex",
+        "phone": "phone",
+        "allergies": "allergies",
+        "conditions": "conditions",
+        "medicines": "medicines",
+        "consent": "consent"
+      }
+    },
+    "savedNote": "Saved to your patient records.",
+    "addedUnsaved": "{{name}} added for this session.",
+    "unsavedNote": "Consent declined: nothing is saved. This record disappears when the tab is closed or reloaded.",
+    "saveError": "Couldn’t save. Check your connection and try again."
+  },
+  "patientDetail": {
+    "loading": "Loading patient…",
+    "missing": "Patient not found.",
+    "error": "Couldn’t load this patient.",
+    "showPhone": "Show number",
+    "hidePhone": "Hide number",
+    "yes": "Yes",
+    "no": "No",
+    "record": "Record",
+    "registered": "Registered",
+    "patientWords": "Patient’s own words",
+    "patientWordsHint": "Exactly what the patient said when answering by voice.",
+    "recording": "Voice intake recording",
+    "recordingHint": "Every question Samvad asked and the patient’s spoken answers, in order.",
+    "patient": "Patient",
+    "play": "Play recording",
+    "noAudio": "No audio"
   }
 }

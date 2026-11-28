@@ -1,7 +1,7 @@
 // "New patient" wizard, after shadcn.io's stepper-dialog-wizard block (a Dialog
 // with a numbered step line, one panel per step, Back + one primary action).
 // That block's code is Pro-only, so this is rebuilt from its description.
-import { AlertTriangle, CheckIcon } from "lucide-react"
+import { AlertTriangle, CheckIcon, Loader2, Mic, Square } from "lucide-react"
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -13,11 +13,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { type SamplePatient, type Sex } from "@/data/sample"
+import { type Sex } from "@/data/sample"
+import { LiveOrb } from "@/features/interpreter/live-orb"
 import { getLanguage, LANGUAGES } from "@/i18n/languages"
 import { cn } from "@/lib/utils"
+import { maskPhone, type NewPatient } from "./patients-api"
+import { useVoiceIntake, type IntakeField, type IntakeTurn, type IntakeValue } from "./use-voice-intake"
 
-const STEPS = ["details", "language", "health", "review"] as const
+// Language comes first: choosing a voice language starts the spoken questions.
+const STEPS = ["language", "details", "health", "review"] as const
 type Step = (typeof STEPS)[number]
 
 export const CONDITIONS = ["diabetes", "hypertension", "asthma", "heart", "thyroid", "kidney"] as const
@@ -75,27 +79,47 @@ function validate(step: Step, d: Draft): Errors {
   return e
 }
 
-/** Phone shown masked, the way the patients table shows it. */
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, "").slice(-10)
-  return digits ? `+91 ••••• ••${digits.slice(-3)}` : "—"
-}
+export type NewPatientInput = NewPatient & { consent: Consent; recording: IntakeTurn[] }
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  nextId: string
-  onCreate: (patient: SamplePatient) => void
+  /** Saves (consent given) or keeps in memory (declined); resolves with the patient code, or null if unsaved. */
+  onCreate: (patient: NewPatientInput) => Promise<string | null>
 }
 
-export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props) {
+export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
   const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [reached, setReached] = useState(0)
   const [draft, setDraft] = useState<Draft>(EMPTY)
   const [errors, setErrors] = useState<Errors>({})
+  // "" = added but not saved (consent declined); a code = saved.
   const [created, setCreated] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const stepRefs = useRef<(HTMLButtonElement | null)[]>([])
+  // The patient's words, verbatim, for each field filled by voice (Critical Rule 6).
+  const [heard, setHeard] = useState<Partial<Record<IntakeField, string>>>({})
+  const [missed, setMissed] = useState<IntakeField[]>([])
+
+  const intake = useVoiceIntake({
+    onStep: (i) => {
+      setStep(i)
+      setReached((r) => Math.max(r, i))
+    },
+    onField: (field, value: IntakeValue, words) => {
+      setHeard((h) => ({ ...h, [field]: words }))
+      setDraft((d) => {
+        if (field === "conditions") return { ...d, conditions: (value as string[]).filter((c): c is Condition => (CONDITIONS as readonly string[]).includes(c)) }
+        if (field === "sex") return { ...d, sex: value as Sex }
+        if (field === "consent") return { ...d, consent: value as Consent }
+        return { ...d, [field]: value as string }
+      })
+      setErrors((e) => ({ ...e, [field]: undefined }))
+    },
+    onMissed: (field) => setMissed((m) => [...m, field]),
+  })
 
   const current = STEPS[step]
   const lang = draft.language ? getLanguage(draft.language) : null
@@ -106,6 +130,10 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
   }
 
   const reset = () => {
+    intake.stop()
+    intake.clearRecording()
+    setHeard({})
+    setMissed([])
     setStep(0)
     setReached(0)
     setDraft(EMPTY)
@@ -124,29 +152,43 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
     setReached((r) => Math.max(r, i))
   }
 
-  const next = () => {
-    if (created) return close(false)
+  const next = async () => {
+    if (created !== null) return close(false)
     const e = validate(current, draft)
     setErrors(e)
     if (Object.keys(e).length) return
     if (current !== "review") return goTo(step + 1)
-    onCreate({
-      id: nextId,
-      name: draft.name.trim().replace(/\s+/g, " "),
-      age: Number(draft.age),
-      sex: draft.sex as Sex,
-      phone: maskPhone(draft.phone),
-      language: draft.language,
-      lastVisit: new Date().toLocaleDateString("en-CA"),
-      visits: 0,
-      status: "active",
-    })
-    setCreated(nextId)
+    if (saving) return
+    setSaving(true)
+    setSaveError(false)
+    try {
+      const digits = draft.phone.replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "")
+      const code = await onCreate({
+        full_name: draft.name.trim().replace(/\s+/g, " "),
+        age: Number(draft.age),
+        sex: draft.sex as Sex,
+        phone: digits || null,
+        language: draft.language,
+        can_read: draft.canRead,
+        companion: draft.companion,
+        allergies: draft.allergies.trim() || null,
+        conditions: draft.conditions,
+        medicines: draft.medicines.trim() || null,
+        patient_words: heard as Record<string, string>,
+        consent: draft.consent as Consent,
+        recording: intake.recording(),
+      })
+      setCreated(code ?? "")
+    } catch {
+      setSaveError(true)
+    } finally {
+      setSaving(false)
+    }
   }
 
   // The step line is one tab stop; arrow keys move between reached steps.
   const onStepKey = (e: KeyboardEvent<HTMLOListElement>) => {
-    if (created) return
+    if (created !== null) return
     const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
     if (!dir) return
     e.preventDefault()
@@ -158,10 +200,73 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
 
   const err = (key: keyof Draft) => (errors[key] ? t(`newPatient.errors.${errors[key]}`) : undefined)
   // A fixed two-line slot so the dialog doesn't jump when a message appears.
+  const said = (key: keyof Draft) =>
+    heard[key as IntakeField] ? t("newPatient.voice.patientSaid", { text: heard[key as IntakeField] }) : undefined
   const slot = (key: keyof Draft, hint?: ReactNode) =>
-    errors[key] ? <FieldError className="min-h-8 text-xs">{err(key)}</FieldError> : <FieldDescription className="min-h-8 text-xs">{hint}</FieldDescription>
+    errors[key] ? (
+      <FieldError className="min-h-4 text-xs">{err(key)}</FieldError>
+    ) : (
+      <FieldDescription className="min-h-4 text-xs">{said(key) ?? hint}</FieldDescription>
+    )
 
-  const primaryLabel = created
+  const startVoice = (code: string) => {
+    setHeard({})
+    setMissed([])
+    void intake.start(code)
+  }
+
+  const voicePanel = intake.phase !== "idle" && created === null && (
+    <div className="flex flex-col items-center gap-2 rounded-lg border bg-muted/40 px-4 pt-4 pb-2.5 text-center" aria-live="polite">
+      {/* Same live orb as the interpreter: swirls, breathes, and swells with whoever is speaking. */}
+      <LiveOrb level={intake.level} className="size-24" />
+      <div className="flex min-h-12 w-full flex-col items-center gap-0.5 text-sm">
+        {intake.phase === "done" ? (
+          <>
+            <p className="font-medium">{t("newPatient.voice.done")}</p>
+            {missed.length > 0 && (
+              <p className="text-xs text-caution">
+                {t("newPatient.voice.missed", { fields: missed.map((f) => t(`newPatient.voice.field.${f}`)).join(", ") })}
+              </p>
+            )}
+          </>
+        ) : intake.phase === "error" ? (
+          <p className="text-destructive">{t("newPatient.voice.error")}</p>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-muted-foreground">{t(`newPatient.voice.phase.${intake.phase}`)}</p>
+            {intake.question && (
+              <p className="line-clamp-2" lang={draft.language} dir={lang?.dir}>
+                {intake.question.text}
+              </p>
+            )}
+            {intake.question && draft.language !== "en" && (
+              <p className="line-clamp-1 text-xs text-muted-foreground">{intake.question.english}</p>
+            )}
+            {intake.partial && (
+              <p className="line-clamp-1 text-xs text-primary" lang={draft.language}>
+                “{intake.partial}”
+              </p>
+            )}
+          </>
+        )}
+      </div>
+      {intake.active ? (
+        <Button type="button" variant="outline" size="xs" onClick={intake.stop}>
+          <Square />
+          {t("newPatient.voice.stop")}
+        </Button>
+      ) : (
+        lang?.voice && (
+          <Button type="button" variant="outline" size="xs" onClick={() => startVoice(draft.language)}>
+            <Mic />
+            {t("newPatient.voice.again")}
+          </Button>
+        )
+      )}
+    </div>
+  )
+
+  const primaryLabel = created !== null
     ? t("newPatient.done")
     : current === "review"
       ? t("newPatient.create")
@@ -169,7 +274,7 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="gap-5 sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("newPatient.title")}</DialogTitle>
           <DialogDescription>{t("newPatient.description")}</DialogDescription>
@@ -179,8 +284,8 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
         <ol aria-label={t("newPatient.steps")} onKeyDown={onStepKey} className="flex items-center">
           {STEPS.map((s, i) => {
             const done = i < step || created !== null
-            const active = i === step && !created
-            const reachable = i <= reached && !created
+            const active = i === step && created === null
+            const reachable = i <= reached && created === null
             return (
               <li key={s} className={cn("flex items-center", i < STEPS.length - 1 && "flex-1")}>
                 <button
@@ -214,28 +319,39 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
                   </span>
                 </button>
                 {i < STEPS.length - 1 && (
-                  <span aria-hidden="true" className={cn("mx-2 h-px flex-1", i < step || created ? "bg-primary" : "bg-border")} />
+                  <span aria-hidden="true" className={cn("mx-2 h-px flex-1", i < step || created !== null ? "bg-primary" : "bg-border")} />
                 )}
               </li>
             )
           })}
         </ol>
 
+        {voicePanel}
+
         <form
           noValidate
           onSubmit={(e) => {
             e.preventDefault()
-            next()
+            void next()
           }}
-          className="min-h-72"
+          className="min-h-60"
         >
-          {created ? (
-            <div role="status" className="flex flex-col items-center gap-2 py-10 text-center">
+          {created !== null ? (
+            <div role="status" className="flex flex-col items-center gap-2 py-8 text-center">
               <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <CheckIcon className="size-5" aria-hidden="true" />
               </span>
-              <p className="font-medium">{t("newPatient.created", { name: draft.name.trim(), id: created })}</p>
-              <p className="max-w-xs text-xs text-muted-foreground">{t("newPatient.demoNote")}</p>
+              {created ? (
+                <>
+                  <p className="font-medium">{t("newPatient.created", { name: draft.name.trim(), id: created })}</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">{t("newPatient.savedNote")}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium">{t("newPatient.addedUnsaved", { name: draft.name.trim() })}</p>
+                  <p className="max-w-xs text-xs text-caution">{t("newPatient.unsavedNote")}</p>
+                </>
+              )}
             </div>
           ) : current === "details" ? (
             <FieldGroup className="gap-3">
@@ -243,7 +359,6 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
                 <FieldLabel htmlFor="np-name">{t("auth.fullName")}</FieldLabel>
                 <Input
                   id="np-name"
-                  autoFocus
                   autoComplete="off"
                   value={draft.name}
                   maxLength={MAX_NAME + 20}
@@ -303,12 +418,19 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
               </Field>
             </FieldGroup>
           ) : current === "language" ? (
-            <FieldGroup className="gap-4">
+            <FieldGroup className="gap-3">
               <Field className="gap-1.5" data-invalid={!!errors.language || undefined}>
                 <FieldLabel htmlFor="np-language">{t("newPatient.language")}</FieldLabel>
                 <Select
                   value={draft.language || null}
-                  onValueChange={(v) => set("language", (v as string) ?? "")}
+                  onValueChange={(v) => {
+                    const code = (v as string) ?? ""
+                    set("language", code)
+                    // A voice language starts the spoken questions at once (from this click,
+                    // so the browser allows the microphone). Others are typed by the doctor.
+                    if (code && getLanguage(code).voice) startVoice(code)
+                    else intake.stop()
+                  }}
                   items={LANGUAGES.map((l) => ({ value: l.code, label: l.englishName }))}
                 >
                   <SelectTrigger id="np-language" className="w-full rounded-sm" aria-invalid={!!errors.language || undefined}>
@@ -332,13 +454,13 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
 
               {/* Languages without voice coverage are never offered for voice interpretation. */}
               {lang && !lang.voice && (
-                <div role="note" className="flex gap-2 rounded-sm border border-caution/40 bg-caution-soft p-3 text-xs text-caution">
+                <div role="note" className="flex gap-2 rounded-sm border border-caution/40 bg-caution-soft p-2.5 text-xs text-caution">
                   <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   <p>{t("newPatient.noVoice", { language: lang.englishName })}</p>
                 </div>
               )}
 
-              <FieldSet className="gap-3">
+              <FieldSet className="gap-2">
                 <FieldLegend variant="label">{t("newPatient.communication")}</FieldLegend>
                 <Field orientation="horizontal">
                   <Checkbox id="np-read" checked={draft.canRead} onCheckedChange={(v) => set("canRead", v === true)} />
@@ -355,7 +477,7 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
               </FieldSet>
             </FieldGroup>
           ) : current === "health" ? (
-            <FieldGroup className="gap-4">
+            <FieldGroup className="gap-3">
               <Field className="gap-1.5">
                 <FieldLabel htmlFor="np-allergies">{t("newPatient.allergies")}</FieldLabel>
                 <Input
@@ -365,7 +487,7 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
                   value={draft.allergies}
                   onChange={(e) => set("allergies", e.target.value)}
                 />
-                <FieldDescription className="text-xs">{t("newPatient.allergiesHint")}</FieldDescription>
+                <FieldDescription className="text-xs">{said("allergies") ?? t("newPatient.allergiesHint")}</FieldDescription>
               </Field>
               <FieldSet className="gap-2">
                 <FieldLegend variant="label">{t("newPatient.conditions")}</FieldLegend>
@@ -385,6 +507,7 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
                     </Field>
                   ))}
                 </div>
+                {said("conditions") && <FieldDescription className="text-xs">{said("conditions")}</FieldDescription>}
               </FieldSet>
               <Field className="gap-1.5">
                 <FieldLabel htmlFor="np-medicines">{t("newPatient.medicines")}</FieldLabel>
@@ -395,10 +518,11 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
                   value={draft.medicines}
                   onChange={(e) => set("medicines", e.target.value)}
                 />
+                {said("medicines") && <FieldDescription className="text-xs">{said("medicines")}</FieldDescription>}
               </Field>
             </FieldGroup>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 rounded-sm border p-3 text-sm">
                 <Row label={t("auth.fullName")}>{draft.name.trim()}</Row>
                 <Row label={t("newPatient.ageSex")}>
@@ -433,13 +557,15 @@ export function NewPatientDialog({ open, onOpenChange, nextId, onCreate }: Props
             </div>
           )}
 
-          <DialogFooter className="mt-4">
-            {!created && (
+          <DialogFooter className="mt-3">
+            {created === null && (
               <Button type="button" variant="outline" size="sm" onClick={() => (step === 0 ? close(false) : goTo(step - 1))}>
                 {step === 0 ? t("common.cancel") : t("newPatient.back")}
               </Button>
             )}
-            <Button type="submit" size="sm">
+            {saveError && <p className="me-auto self-center text-xs text-destructive">{t("newPatient.saveError")}</p>}
+            <Button type="submit" size="sm" disabled={saving}>
+              {saving && <Loader2 className="animate-spin" />}
               {primaryLabel}
             </Button>
           </DialogFooter>

@@ -25,10 +25,25 @@ RUN test -n "$VITE_SUPABASE_URL" || { echo "ERROR: VITE_SUPABASE_URL is not set 
 RUN test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "ERROR: VITE_SUPABASE_PUBLISHABLE_KEY is not set for this build" >&2; exit 1; }
 RUN npm run build
 
-# ── Serve ────────────────────────────────────────────────────────────────────
-FROM caddy:2-alpine
+# ── Serve: Caddy (website, public $PORT) + FastAPI (/api, internal :8000) ──────
+FROM python:3.12-slim
+# Caddy is a single static binary; take it from the official image.
+COPY --from=caddy:2-alpine /usr/bin/caddy /usr/bin/caddy
+
+WORKDIR /app/backend
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/app ./app
+
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY deploy/start.sh /start.sh
+# Strip Windows line endings in case the script was checked out with CRLF.
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 COPY --from=build /app/frontend/dist /srv
 
+# Runtime variables (Railway service variables): SARVAM_API_KEY, plus the
+# VITE_SUPABASE_* values above, which the API reuses to check sign-ins.
+ENV PYTHONUNBUFFERED=1
 # Railway injects PORT at runtime; the Caddyfile falls back to 8080.
 EXPOSE 8080
+CMD ["/start.sh"]

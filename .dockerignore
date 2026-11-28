@@ -10,3 +10,6 @@
 **/.env*
 *.log
 README.md
+**/.venv
+**/__pycache__
+**/.pytest_cache

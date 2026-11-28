@@ -9,6 +9,10 @@ export type PatientStatus = 'active' | 'followUp' | 'needsReview'
 
 export interface SamplePatient {
   id: string
+  /** Route id for /patients/:ref (database uuid). Falls back to `id`. */
+  ref?: string
+  /** Kept in memory only (consent declined, Critical Rule 3). */
+  unsaved?: boolean
   name: string
   age: number
   sex: Sex

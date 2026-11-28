@@ -46,7 +46,7 @@ export function usePatientColumns() {
           header: ({ column }) => sortableHeader(column, t("patients.col.patient")),
           cell: ({ row }) => (
             <div className="flex flex-col">
-              <Link to={`/patients/${row.original.id}`} className="font-medium hover:underline">
+              <Link to={`/patients/${row.original.ref ?? row.original.id}`} className="font-medium hover:underline">
                 {row.original.name}
               </Link>
               <span className="text-xs text-muted-foreground">
@@ -57,7 +57,14 @@ export function usePatientColumns() {
         }),
         columnHelper.accessor("id", {
           header: t("patients.col.id"),
-          cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.id}</span>,
+          cell: ({ row }) =>
+            row.original.unsaved ? (
+              <Badge variant="outline" className="border-caution/40 bg-caution-soft text-caution">
+                {t("patients.notSaved")}
+              </Badge>
+            ) : (
+              <span className="font-mono text-xs text-muted-foreground">{row.original.id}</span>
+            ),
         }),
         columnHelper.accessor("phone", {
           header: t("patients.col.phone"),
@@ -112,7 +119,7 @@ export function usePatientColumns() {
                     variant="ghost"
                     size="icon-sm"
                     nativeButton={false}
-                    render={<Link to={`/patients/${row.original.id}`} />}
+                    render={<Link to={`/patients/${row.original.ref ?? row.original.id}`} />}
                   />
                 }
               >

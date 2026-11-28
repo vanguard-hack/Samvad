@@ -1,0 +1,5 @@
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+httpx==0.29.0
+sarvamai==0.1.50
+python-multipart==0.0.34
