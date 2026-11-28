@@ -12,6 +12,8 @@ Endpoints (all under /api, all need a Supabase access token except health):
   POST /api/intake/*     voice-guided New patient questions (see services/intake_service.py)
   POST /api/assistant    Ctrl+Space voice assistant (Claude on Bedrock, see services/assistant_service.py)
   POST /api/samvad-agent/query  Claude with the Wispr Flow MCP tools (see services/samvad_agent_service.py)
+  POST /api/fetch-appointments  sync Google Calendar appointments in a date range (see services/appointment_service.py)
+  POST /api/appointments        create an appointment as a Google Calendar event
   GET  /api/health       liveness (no auth)
 """
 

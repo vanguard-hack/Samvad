@@ -10,10 +10,13 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 def _load_dotenv() -> None:
-    """Minimal .env loader for local development; real env vars always win."""
-    path = BACKEND_DIR / ".env"
-    if not path.is_file():
-        return
+    """Minimal .env loader for local development; real env vars always win, then .env.local, then .env."""
+    for path in (BACKEND_DIR / ".env.local", BACKEND_DIR / ".env"):
+        if path.is_file():
+            _load_env_file(path)
+
+
+def _load_env_file(path: Path) -> None:
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -52,6 +55,12 @@ class Settings:
     public_base_url: str = "http://localhost:8000"
     wispr_auth_timeout_s: int = 600
     wispr_open_browser: bool = False  # open the sign-in page on the server's own desktop (local dev only)
+    # Appointments: Google Calendar through a service account (no user OAuth). The key is a
+    # secret (the JSON key file's contents, or base64 of it); the calendar is shared with
+    # the service account's email.
+    google_service_account_json: str = ""
+    google_calendar_id: str = ""
+    google_calendar_timezone: str = "Asia/Kolkata"
 
     @property
     def wispr_redirect_uri(self) -> str:
@@ -80,4 +89,8 @@ def get_settings() -> Settings:
         public_base_url=env("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/"),
         wispr_auth_timeout_s=int(env("WISPR_AUTH_TIMEOUT_S", "600")),
         wispr_open_browser=env("WISPR_OPEN_BROWSER", "false").lower() == "true",
+        google_service_account_json=env("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip(),
+        # Unset: the service account's own calendar ("primary").
+        google_calendar_id=env("GOOGLE_CALENDAR_ID", "").strip() or "primary",
+        google_calendar_timezone=env("GOOGLE_CALENDAR_TIMEZONE", "Asia/Kolkata").strip(),
     )

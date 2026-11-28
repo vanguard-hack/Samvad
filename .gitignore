@@ -14,6 +14,11 @@ dev-dist/
 # Wispr Flow OAuth tokens (Samvad agent)
 .wispr_oauth.json*
 .wispr_test_oauth.json*
+# Google service account keys (appointments): keep them in env/secrets only
+*service-account*.json
+*service_account*.json
+google-credentials*.json
+gcp-key*.json
 *.local
 
 # Clerk CLI claim/temp files

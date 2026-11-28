@@ -8,3 +8,8 @@ python-multipart==0.0.34
 anthropic[bedrock]==1.17.0
 # Samvad agent: Wispr Flow MCP client (streamable HTTP + OAuth). Kept below 2.0, like wispr_agent.
 mcp==1.30.0
+# Appointments: Google Calendar API as a service account. google-auth signs the token
+# request (its requests transport); the API calls themselves use httpx.
+google-auth[requests]==2.63.1
+# IANA time zones for zoneinfo on hosts without a system tz database (Windows, slim images).
+tzdata==2026.6
