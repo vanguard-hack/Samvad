@@ -13,4 +13,13 @@ export function addSessionPatient(p: Omit<PatientRow, "id" | "patient_number" | 
 }
 
 export const getSessionPatient = (id: string) => store.get(id) ?? null
+export const isSessionPatient = (id: string) => id.startsWith("session-")
+
+export function updateSessionPatient(id: string, patch: Partial<PatientRow>): PatientRow | null {
+  const row = store.get(id)
+  if (!row) return null
+  const next = { ...row, ...patch }
+  store.set(id, next)
+  return next
+}
 export const listSessionPatients = () => [...store.values()].reverse()

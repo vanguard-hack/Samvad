@@ -1,5 +1,5 @@
 import { createColumnHelper, type Column, type RowData } from "@tanstack/react-table"
-import { ArrowUpDown, Eye } from "lucide-react"
+import { ArrowUpDown, Eye, MoreHorizontal, Pencil } from "lucide-react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
@@ -7,130 +7,172 @@ import { Link } from "react-router"
 import { type DataTableFeatures } from "@/components/data-table/data-table-features"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { type PatientStatus, type SamplePatient } from "@/data/sample"
-import { getLanguage } from "@/i18n/languages"
-import { daysSince } from "@/lib/format"
-
-/** Badge styling by meaning: caution = needs a human check (safety). */
-export const PATIENT_STATUS_BADGE: Record<PatientStatus, { variant: "secondary" | "default" | "outline"; className?: string }> = {
-  active: { variant: "secondary" },
-  followUp: { variant: "outline", className: "border-primary/40 text-primary" },
-  needsReview: { variant: "outline", className: "border-caution/40 bg-caution-soft text-caution" },
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+import { patientCode, QUEUE_STATUSES, type PatientRow, type QueuePatch } from "./patients-api"
+import { byDue, byLastEvent, clockLabel, eventWhen, PRIORITY_OPTIONS, PRIORITY_STYLE, shortDuration, STATUS_STYLE } from "./queue-meta"
 
 /** Sortable header, as in the shadcn data-table guide. */
-export function sortableHeader<TData extends RowData, TValue>(column: Column<DataTableFeatures, TData, TValue>, title: string) {
+function sortableHeader<TData extends RowData, TValue>(column: Column<DataTableFeatures, TData, TValue>, title: string) {
   return (
-    <Button variant="ghost" size="sm" className="-ms-2.5" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+    <Button variant="ghost" size="sm" className="-ms-2.5 uppercase" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
       {title}
       <ArrowUpDown />
     </Button>
   )
 }
 
-/** Language shown by its English name. */
-export function LanguageCell({ code }: { code: string }) {
-  return <span>{getLanguage(code).englishName}</span>
+const columnHelper = createColumnHelper<DataTableFeatures, PatientRow>()
+
+type Actions = {
+  onUpdate: (row: PatientRow, patch: QueuePatch) => void
+  onEdit: (row: PatientRow) => void
 }
 
-const columnHelper = createColumnHelper<DataTableFeatures, SamplePatient>()
-
-export function usePatientColumns() {
-  const { t } = useTranslation()
+export function useQueueColumns({ onUpdate, onEdit }: Actions) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
 
   return useMemo(
     () =>
       columnHelper.columns([
-        columnHelper.accessor("name", {
-          header: ({ column }) => sortableHeader(column, t("patients.col.patient")),
-          cell: ({ row }) => (
-            <div className="flex flex-col">
-              <Link to={`/patients/${row.original.ref ?? row.original.id}`} className="font-medium hover:underline">
-                {row.original.name}
-              </Link>
-              <span className="text-xs text-muted-foreground">
-                {t("patients.ageSex", { age: row.original.age, sex: t(`patients.sex.${row.original.sex}`) })}
-              </span>
-            </div>
-          ),
-        }),
-        columnHelper.accessor("id", {
-          header: t("patients.col.id"),
-          cell: ({ row }) =>
-            row.original.unsaved ? (
-              <Badge variant="outline" className="border-caution/40 bg-caution-soft text-caution">
-                {t("patients.notSaved")}
-              </Badge>
-            ) : (
-              <span className="font-mono text-xs text-muted-foreground">{row.original.id}</span>
-            ),
-        }),
-        columnHelper.accessor("phone", {
-          header: t("patients.col.phone"),
-          cell: ({ row }) => (
-            <Tooltip>
-              <TooltipTrigger render={<span className="text-muted-foreground tabular-nums" />}>
-                {row.original.phone}
-              </TooltipTrigger>
-              <TooltipContent>{t("patients.phoneMasked")}</TooltipContent>
-            </Tooltip>
-          ),
-        }),
-        columnHelper.accessor("language", {
-          header: t("patients.col.language"),
-          cell: ({ row }) => <LanguageCell code={row.original.language} />,
-        }),
-        columnHelper.accessor((p) => daysSince(p.lastVisit), {
-          id: "lastVisit",
-          header: ({ column }) => sortableHeader(column, t("patients.col.lastVisit")),
-          cell: ({ getValue }) => {
-            const d = getValue()
+        columnHelper.accessor("full_name", {
+          header: t("queue.col.patient"),
+          cell: ({ row }) => {
+            const p = row.original
             return (
-              <span className="text-muted-foreground">
-                {d <= 0 ? t("patients.today") : d === 1 ? t("patients.yesterday") : t("patients.daysAgo", { count: d })}
-              </span>
+              <div className="flex flex-col leading-tight">
+                <Link to={`/patients/${p.id}`} className="font-semibold hover:underline">
+                  {p.full_name}
+                </Link>
+                <span className="text-xs text-muted-foreground">
+                  {p.age} · {p.consent === "declined" ? t("patients.notSaved") : patientCode(p.patient_number)}
+                </span>
+                <span className="text-xs text-muted-foreground">{p.clinic ?? t("queue.noClinic")}</span>
+              </div>
             )
           },
         }),
-        columnHelper.accessor("visits", {
-          header: ({ column }) => sortableHeader(column, t("patients.col.visits")),
-          cell: ({ getValue }) => <span className="tabular-nums">{getValue()}</span>,
-        }),
-        columnHelper.accessor("status", {
-          header: t("patients.col.status"),
-          cell: ({ getValue }) => {
-            const s = getValue()
-            const b = PATIENT_STATUS_BADGE[s]
+        columnHelper.accessor("reason", {
+          header: t("queue.col.reason"),
+          cell: ({ row }) => {
+            const p = row.original
             return (
-              <Badge variant={b.variant} className={b.className}>
-                {t(`patients.status.${s}`)}
-              </Badge>
+              <div className="flex flex-col items-start gap-1">
+                <span className={cn("text-sm", !p.reason && "text-muted-foreground")}>{p.reason ?? t("queue.noReason")}</span>
+                <Badge variant="outline" className={PRIORITY_STYLE[p.priority ?? "none"]}>
+                  {t(`queue.priority.${p.priority ?? "none"}`)}
+                </Badge>
+              </div>
             )
           },
+        }),
+        columnHelper.accessor("last_event_at", {
+          header: ({ column }) => sortableHeader(column, t("queue.col.lastEvent")),
+          sortFn: (a, b) => -byLastEvent(a.original, b.original),
+          cell: ({ row }) => (
+            <span className="text-sm text-muted-foreground">
+              {t(`queue.event.${row.original.last_event}`)} · {eventWhen(row.original.last_event_at, lang)}
+            </span>
+          ),
+        }),
+        columnHelper.accessor("due_at", {
+          header: ({ column }) => sortableHeader(column, t("queue.col.due")),
+          sortFn: (a, b) => byDue(a.original, b.original),
+          cell: ({ row }) => {
+            const due = row.original.due_at
+            if (!due) return <span className="text-sm text-muted-foreground">{t("queue.noDue")}</span>
+            const ms = +new Date(due) - Date.now()
+            const done = row.original.queue_status === "completed"
+            const overdue = ms < 0 && !done
+            return (
+              <div className={cn("flex flex-col text-sm leading-tight", overdue && "text-danger")}>
+                <span className="font-medium tabular-nums">{clockLabel(due, lang)}</span>
+                {!done && (
+                  <span className={cn("text-xs", !overdue && "text-muted-foreground")}>
+                    {overdue
+                      ? t("queue.overdue", { duration: shortDuration(ms, lang) })
+                      : t("queue.dueIn", { duration: shortDuration(ms, lang) })}
+                  </span>
+                )}
+              </div>
+            )
+          },
+        }),
+        columnHelper.accessor("queue_status", {
+          header: t("queue.col.status"),
+          cell: ({ getValue }) => (
+            <Badge variant="outline" className={STATUS_STYLE[getValue()]}>
+              {t(`queue.status.${getValue()}`)}
+            </Badge>
+          ),
         }),
         columnHelper.display({
           id: "actions",
-          cell: ({ row }) => (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    nativeButton={false}
-                    render={<Link to={`/patients/${row.original.ref ?? row.original.id}`} />}
-                  />
-                }
-              >
-                <Eye />
-                <span className="sr-only">{t("patients.open")}</span>
-              </TooltipTrigger>
-              <TooltipContent>{t("patients.open")}</TooltipContent>
-            </Tooltip>
-          ),
+          cell: ({ row }) => {
+            const p = row.original
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("queue.actions", { name: p.full_name })} />}>
+                  <MoreHorizontal />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem render={<Link to={`/patients/${p.id}`} />}>
+                      <Eye />
+                      {t("patients.open")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(p)}>
+                      <Pencil />
+                      {t("queue.editDetails")}
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>{t("queue.col.status")}</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={p.queue_status} onValueChange={(v) => onUpdate(p, { queue_status: v as PatientRow["queue_status"] })}>
+                        {QUEUE_STATUSES.map((s) => (
+                          <DropdownMenuRadioItem key={s} value={s}>
+                            {t(`queue.status.${s}`)}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>{t("queue.priorityLabel")}</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup
+                        value={p.priority ?? "none"}
+                        onValueChange={(v) => onUpdate(p, { priority: v === "none" ? null : (v as PatientRow["priority"]) })}
+                      >
+                        {PRIORITY_OPTIONS.map((o) => (
+                          <DropdownMenuRadioItem key={o} value={o}>
+                            {t(`queue.priority.${o}`)}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          },
         }),
       ]),
-    [t],
+    [t, lang, onUpdate, onEdit],
   )
 }

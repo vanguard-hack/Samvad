@@ -341,5 +341,60 @@
     "patient": "Patient",
     "play": "Play recording",
     "noAudio": "No audio"
+  },
+  "queue": {
+    "title": "Prioritized patient work queue",
+    "subtitle": "Ordered by clinical-operational urgency and due time",
+    "search": "Search this queue",
+    "all": "All",
+    "clinic": "Clinic",
+    "priorityLabel": "Priority",
+    "sortBy": "Sort",
+    "clear": "Clear",
+    "updateError": "Couldn’t save that change. Try again.",
+    "noClinic": "No clinic set",
+    "noReason": "No reason recorded",
+    "noDue": "—",
+    "overdue": "{{duration}} overdue",
+    "dueIn": "Due in {{duration}}",
+    "actions": "Actions for {{name}}",
+    "editDetails": "Edit queue details",
+    "editTitle": "Queue details: {{name}}",
+    "editHint": "Reason, priority and due time are set by you, the doctor.",
+    "reasonPlaceholder": "e.g. Follow-up after discharge",
+    "priorityHint": "Your clinical judgement. Samvad never sets priority automatically.",
+    "save": "Save",
+    "col": {
+      "patient": "Patient / clinic",
+      "reason": "Reason / risk signal",
+      "lastEvent": "Last event",
+      "due": "Due",
+      "status": "Status"
+    },
+    "status": {
+      "needs_action": "Needs action",
+      "in_progress": "In progress",
+      "waiting": "Waiting",
+      "completed": "Completed"
+    },
+    "priority": {
+      "high": "High risk",
+      "medium": "Medium risk",
+      "low": "Low risk",
+      "none": "Not triaged"
+    },
+    "event": {
+      "registered": "Registered",
+      "voice_intake": "Voice intake",
+      "triaged": "Triage updated",
+      "status_changed": "Status changed",
+      "visit": "Visit"
+    },
+    "sort": {
+      "urgency": "Urgency",
+      "due": "Due time",
+      "lastEvent": "Last event",
+      "name": "Name"
+    }
   }
 }
