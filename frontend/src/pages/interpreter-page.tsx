@@ -182,7 +182,24 @@ export function InterpreterPage() {
   // ── PC / tablet: voice orb + transcript + big voice-note recorder ────────
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-6">
-      <LiveOrb level={level} label={statusText} className="my-4 w-48 lg:w-56" />
+      <LiveOrb
+        level={level}
+        label={statusText}
+        state={
+          failed
+            ? "error"
+            : mic.state === "requesting"
+              ? "connecting"
+              : speakingId !== null
+                ? "speaking"
+                : loadingId !== null
+                  ? "thinking"
+                  : live
+                    ? "listening"
+                    : "idle"
+        }
+        className="my-4 w-48 lg:w-56"
+      />
       {status}
       {transcript}
       {recorder}

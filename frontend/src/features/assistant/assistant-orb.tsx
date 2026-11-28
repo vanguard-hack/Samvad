@@ -9,6 +9,7 @@ const AURORA_CONIC =
 
 const SIZES = {
   sm: { box: "size-8", icon: "size-4", ring: "inset-[1.5px]", glow: "blur-[6px]" },
+  md: { box: "size-14", icon: "size-6", ring: "inset-[2px]", glow: "blur-lg" },
   lg: { box: "size-20", icon: "size-9", ring: "inset-[2.5px]", glow: "blur-xl" },
 } as const
 

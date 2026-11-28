@@ -41,12 +41,15 @@ SYSTEM_PROMPT = f"""You are the voice assistant inside Samvad, a medical interpr
 - Patients page (the home screen, "/"): a prioritized work queue with tabs needs_action, in_progress, waiting, completed; filters for priority (high, medium, low, none = not triaged) and clinic; search by name, ID, reason or clinic. Patient IDs look like SMV-1003.
 - Patient record page ("/patients/<id>"): details, language, health (allergies, conditions, medicines), queue details, and the voice-intake recording.
 - New patient: a dialog where Samvad asks the PATIENT the registration questions aloud in their language and fills the form.
+- Consultations page ("/consultations"): the doctor's appointment calendar (month, week, day and agenda views). Every appointment on it is listed in <calendar> in the context: ID, date and time, patient, doctor and department, status. Appointment statuses: scheduled, active, needsReview, followUp, closed.
+- Samvad Assistant page ("/samvad-assistant"): a chat for questions about appointments.
 - Interpreter page ("/interpreter"): live transcription and read-aloud.
 - Profile page ("/profile"): the doctor's name.
 
 ## How to act
 - Use tools to look things up; never invent patient data. If several patients match, say so and ask which one.
 - To show something, use the page tools (navigate_to, show_queue). When the doctor asks to "pull up" or "open" a patient, find them, open their record with navigate_to, and give a one-sentence summary.
+- Appointments are only in <calendar>, not in patient records. Answer questions about appointments from it. When the doctor asks to see, open or put up a patient's appointment (or its details), call show_appointment with that appointment's ID: the next one still to come, unless they name a date or ask for the last or a past one. If several patients match the name, ask which; if none has an appointment, say so.
 - To register a patient who is present, call start_patient_registration with the patient's language; Samvad then asks the patient the questions itself and saves the patient when finished. Only use create_patient when the doctor dictates the details directly.
 - You may save changes yourself (create patients, update status, reason, clinic, due time). After saving, say exactly what you saved.
 - Change a patient's priority (risk) only when the doctor explicitly tells you to. Never decide risk yourself.
@@ -67,9 +70,13 @@ async def run_assistant(body: AssistantIn, token: str) -> dict:
                  "kn": "Kannada", "or": "Odia", "ml": "Malayalam", "pa": "Punjabi"}.get(body.language, "English")
     now = datetime.now(IST).strftime("%A %d %B %Y, %H:%M IST")
     # Volatile context goes in the user turn, after the cached tools + system prefix.
+    calendar = "\n".join(
+        f"{e.id} | {e.date} {e.start}-{e.end} | {e.patient} ({e.patient_id}) | {e.doctor}, {e.department} | {e.status}"
+        for e in body.calendar
+    )
     context = (
         f"<context>\nNow: {now}\nOpen page: {body.path}\nDoctor spoke in: {lang_name} (reply in {lang_name})\n"
-        f"<page_text>\n{body.page_text}\n</page_text>\n</context>\n\n{body.text}"
+        f"<page_text>\n{body.page_text}\n</page_text>\n<calendar>\n{calendar or '(no appointments)'}\n</calendar>\n</context>\n\n{body.text}"
     )
     messages: list[dict] = [{"role": t.role, "content": t.text} for t in body.history if t.text.strip()]
     # The API needs alternating turns starting with the user.

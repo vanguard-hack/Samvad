@@ -41,6 +41,8 @@ export type VoiceOrbProps = Omit<
   /** Pause the material while keeping the current surface visible. */
   active?: boolean;
   speed?: number;
+  /** Follow the system's reduced-motion setting (the default). Pass false where the motion is the point. */
+  respectReducedMotion?: boolean;
   onError?: (error: Error) => void;
   /** Override any built-in string. */
   labels?: Partial<VoiceOrbMessages>;
@@ -57,6 +59,7 @@ export function VoiceOrb({
   colors = DEFAULT_COLORS,
   active = true,
   speed = 1,
+  respectReducedMotion = true,
   onError,
   className,
   style,
@@ -65,7 +68,8 @@ export function VoiceOrb({
   ...props
 }: VoiceOrbProps) {
   const t = useMessages("voiceOrb", voiceOrbMessages, labels);
-  const reducedMotion = useReducedMotion();
+  const systemReducedMotion = useReducedMotion();
+  const reducedMotion = respectReducedMotion && !!systemReducedMotion;
   const canvas = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<ReturnType<typeof createOrbRenderer> | null>(null);
   const [error, setError] = useState<Error | null>(null);

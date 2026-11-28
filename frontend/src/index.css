@@ -376,9 +376,17 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  /* Reduced motion (e.g. Windows "Animation effects" off): animations finish at
+     once instead of playing. `animation-iteration-count: 1` is essential: without
+     it an infinite animation (spinners, pulses) loops every 0.01ms and strobes.
+     The prompt bar's Border Beam and the orb-ui voice orb are exempt, so they move
+     exactly as their libraries designed them (both keep running under reduced motion). */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *:not([data-beam], [data-beam-bloom], .orb-ui, .orb-ui *),
+    *:not([data-beam])::before,
+    *:not([data-beam])::after {
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
   }

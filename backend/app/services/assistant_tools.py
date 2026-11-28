@@ -11,7 +11,7 @@ from app.repositories.patient_repository import LIST_COLUMNS, PATIENT_COLUMNS, D
 CONDITIONS = ["diabetes", "hypertension", "asthma", "heart", "thyroid", "kidney"]
 STATUSES = ["needs_action", "in_progress", "waiting", "completed"]
 PRIORITIES = ["high", "medium", "low", "none"]
-PAGES = ["patients", "interpreter", "profile", "patient"]
+PAGES = ["patients", "consultations", "samvad-assistant", "interpreter", "profile", "patient"]
 
 
 def _tool(name: str, description: str, properties: dict, required: list[str] | None = None) -> dict:
@@ -96,6 +96,12 @@ TOOLS: list[dict] = [
         },
     ),
     _tool(
+        "show_appointment",
+        "Open the Consultations calendar on the doctor's screen at one appointment and show its details. Use an appointment_id from the <calendar> in the context.",
+        {"appointment_id": {"type": "string", "description": "The appointment's ID, e.g. APT-2001"}},
+        ["appointment_id"],
+    ),
+    _tool(
         "start_patient_registration",
         "Open the New patient form and start voice questions for the patient in their language. Samvad asks the patient and saves when done. Ends this assistant conversation.",
         {"language": {"type": "string", "enum": sorted(languages.TTS), "description": "Patient's language (voice-supported only)"}},
@@ -105,7 +111,7 @@ TOOLS: list[dict] = [
 # The last tool definition carries a cache breakpoint: tools + system are stable.
 TOOLS[-1] = {**TOOLS[-1], "cache_control": {"type": "ephemeral"}}
 
-UI_TOOLS = {"navigate_to", "show_queue", "start_patient_registration"}
+UI_TOOLS = {"navigate_to", "show_queue", "show_appointment", "start_patient_registration"}
 
 
 def _code(p: dict) -> str:
@@ -218,6 +224,14 @@ def ui_action(name: str, args: dict) -> tuple[dict, str]:
         return {"type": "navigate", **args}, "Opened on the doctor's screen."
     if name == "show_queue":
         return {"type": "show_queue", **args}, "The queue is shown on screen with those filters."
+    if name == "show_appointment":
+        appointment_id = str(args.get("appointment_id", "")).strip().upper()
+        if not re.fullmatch(r"APT-\d{1,6}", appointment_id):
+            raise ToolError("appointment_id must be an ID from the calendar, like APT-2001")
+        return (
+            {"type": "show_appointment", "appointment_id": appointment_id},
+            "The calendar is open at that appointment with its details shown. Tell the doctor in one sentence.",
+        )
     if name == "start_patient_registration":
         return (
             {"type": "start_registration", "language": args["language"]},

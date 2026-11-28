@@ -50,6 +50,12 @@ const PLURAL_PRONOUN = /\b(they|them|those|these|their)\b/
 const SINGULAR_PRONOUN = /\b(he|she|him|her|his|hers|this patient|that patient|the patient|same patient)\b/
 const BARE_CARRY: Intent[] = ["count", "summary", "next", "last", "doctors", "freeSlots", "list"]
 const RESET = /\b(all|every|everything|everyone|start over|reset|clear( the)? filters?)\b/
+// "Put up Lakshmi's appointment details", "open her appointment", "show it on the calendar".
+const CALENDAR_WORDS = /\b(calendar|consultations? (page|section|tab|view))\b/
+const APPOINTMENT_DETAILS =
+  /\b(appointments?|appts?|consultations?|visits?|bookings?) (details?|info|information)\b|\bdetails? (of|for|about|on) (the |his |her |their |this |that |next |last |upcoming )?(appointments?|appts?|consultations?|visits?)\b/
+const OPEN_VERBS = /\b(pull up|put up|bring up|open|take me to|go to|navigate to|jump to)\b/
+const APPOINTMENT_WORDS = /\b(appointments?|appts?|consultations?|visits?|bookings?)\b/
 const SCHEDULE_WORDS =
   /\b(appointments?|appts?|schedule[sd]?|consultations?|visits?|bookings?|agenda|calendar|slots?|list|show|patients?|queue|clinic)\b/
 
@@ -167,6 +173,7 @@ export function parseDateRange(q: string, today: string): DateRange | undefined 
 
 function parseIntent(q: string, f: AppointmentFilters, hasAppointmentId: boolean): Intent | undefined {
   const n = words(q).length
+  if (CALENDAR_WORDS.test(q) || APPOINTMENT_DETAILS.test(q) || (OPEN_VERBS.test(q) && APPOINTMENT_WORDS.test(q))) return "calendar"
   if (hasAppointmentId) return "details"
   if (n <= 4 && /^(hi|hello|hey|hii+|namaste|namaskar|good (morning|afternoon|evening))\b/.test(q)) return "greeting"
   if (n <= 5 && /\b(thanks|thank you|thx|ty|great|perfect|awesome|ok thanks|cool)\b/.test(q)) return "thanks"

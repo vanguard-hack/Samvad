@@ -4,12 +4,13 @@
  * navigation) is kept as "pending" and picked up when the page subscribes.
  */
 export type AssistantAction =
-  | { type: "navigate"; page: "patients" | "interpreter" | "profile" | "patient"; patient_id?: string }
+  | { type: "navigate"; page: "patients" | "consultations" | "samvad-assistant" | "interpreter" | "profile" | "patient"; patient_id?: string }
+  | { type: "show_appointment"; appointment_id: string }
   | { type: "show_queue"; status?: string; priority?: string; clinic?: string; search?: string }
   | { type: "start_registration"; language: string }
   | { type: "refresh" }
 
-type PageAction = Exclude<AssistantAction, { type: "navigate" }>
+type PageAction = Exclude<AssistantAction, { type: "navigate" } | { type: "show_appointment" }>
 type Listener = (action: PageAction) => void
 
 let pending: PageAction[] = []

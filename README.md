@@ -55,13 +55,16 @@ use the whole app.
 | **Queue editing** | Per-row menu to change status or priority, or edit reason, clinic and due time. The doctor sets risk; Samvad never does it automatically. |
 | **New patient by voice** | Pick the patient's language, then press **Ctrl+Space**: Samvad asks every question aloud in that language (a floating orb shows the question): name, age, sex, phone, allergies, conditions, medicines and consent. Questions are kept very short, and Claude reads each answer, correcting speech-recognition slips (e.g. "Doro 650" becomes Dolo 650) before filling the field. An answer is read back only when Claude isn't sure. The answers fill the form, and the patient's exact words are kept beside them. |
 | **Patient record** | Every detail from the form, the queue fields, the patient's own words, and the full voice-intake recording (each question and answer) with playback. |
-| **Voice assistant** | **Ctrl+Space** on any page opens a draggable voice orb. Ask in any Indian language to open a patient, filter the queue, look up details, update a patient, or register a new patient by voice. The reply is spoken back. |
+| **Consultations calendar** | The doctor's appointments as an event calendar: Month, Week, Day and Agenda views, a mini month with booking dots, department filters and an "Up next" list. Clicking a consultation opens its details, status and Generate report. View-only: doctors don't book here. |
+| **Voice assistant** | **Ctrl+Space** on any page opens a draggable voice orb. Ask in any Indian language to open a patient, filter the queue, look up details, update a patient, register a new patient by voice, or answer from the calendar and open a patient's appointment on it. The reply is spoken back. |
+| **Samvad Assistant chat** | Ask about the schedule in plain words. "Put up Lakshmi's appointment details" opens the calendar at that appointment with its details. On this page Ctrl+Space dictates into the prompt bar. |
 | **Assistant conversations** | Every voice-assistant session (from Ctrl+Space until you close it) is saved and shown as a chat on the Conversations page, live while a session runs. Click the orb to open it or end the session. |
 | **Interpreter** | Live transcription with detected language, and read-aloud of each line in Samvad's voice. |
 | **Languages** | 22 scheduled Indian languages plus English, including right-to-left scripts. Speech-to-text covers all 23; text-to-speech covers 11 (other languages use picture mode plus a human interpreter). The doctor interface is in English, with AI-drafted Hindi, Kannada and Tamil. |
 | **Themes** | Light (default) and dark. |
 
-Consultations, approvals, prescriptions and outside reports are still placeholders.
+Appointments are still a sample schedule held in the browser (status changes last until reload).
+Approvals, prescriptions and outside reports are still placeholders.
 
 ---
 

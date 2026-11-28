@@ -115,9 +115,6 @@
   "consultations": {
     "title": "परामर्श",
     "subtitle": "हर अपॉइंटमेंट, उसका समय और उसकी स्थिति।",
-    "searchPlaceholder": "अपॉइंटमेंट ID से खोजें…",
-    "filterByDate": "तारीख़ से छाँटें",
-    "clearDate": "तारीख़ हटाएँ",
     "col": {
       "id": "अपॉइंटमेंट ID",
       "patientId": "मरीज़ ID",
@@ -152,6 +149,27 @@
       "setStatus": "अपॉइंटमेंट की स्थिति",
       "generateReport": "रिपोर्ट बनाएँ",
       "reportUnavailable": "रिपोर्ट बैकएंड के साथ आएगी।"
+    },
+    "calendar": {
+      "today": "आज",
+      "previous": "पिछला",
+      "next": "अगला",
+      "viewLabel": "कैलेंडर दृश्य",
+      "view": {
+        "month": "महीना",
+        "week": "सप्ताह",
+        "day": "दिन",
+        "agenda": "एजेंडा"
+      },
+      "filters": "विभाग",
+      "all": "सभी",
+      "upNext": "आगे",
+      "tomorrow": "कल",
+      "nothingUpNext": "आगे कोई परामर्श बुक नहीं है।",
+      "more": "+{{count}} और",
+      "empty": "इन दिनों में कोई परामर्श नहीं।",
+      "timezone": "आपका समय क्षेत्र",
+      "visit": "विज़िट {{n}}"
     }
   },
   "section": {
@@ -489,7 +507,11 @@
       "placeholder": "अपॉइंटमेंट के बारे में पूछें, जैसे “Who needs review today?”",
       "hint": "भेजने के लिए Enter · नई पंक्ति के लिए Shift+Enter",
       "send": "भेजें",
-      "stop": "रोकें"
+      "stop": "रोकें",
+      "voice": "बोलकर लिखें (Ctrl+Space)",
+      "voiceStop": "सुनना बंद करें",
+      "voiceError": "माइक्रोफ़ोन इस्तेमाल नहीं हो सका। अनुमति जाँचें और फिर कोशिश करें।",
+      "listening": "सुन रहा है…"
     },
     "when": {
       "today": "आज",
@@ -555,7 +577,10 @@
       "slotsNone": "{{date}} को क्लिनिक के समय में कोई ख़ाली स्लॉट नहीं है।",
       "doctors_zero": "इस अवधि में किसी डॉक्टर के अपॉइंटमेंट नहीं हैं।",
       "doctors_one": "इस अवधि में {{count}} डॉक्टर के अपॉइंटमेंट हैं।",
-      "doctors_other": "इस अवधि में {{count}} डॉक्टरों के अपॉइंटमेंट हैं।"
+      "doctors_other": "इस अवधि में {{count}} डॉक्टरों के अपॉइंटमेंट हैं।",
+      "calendar": "कैलेंडर में {{patient}} का अपॉइंटमेंट खुल रहा है: {{doctor}} के साथ, {{date}} {{time}} बजे।",
+      "calendarOpen": "कैलेंडर खुल रहा है।",
+      "calendarNone": "कैलेंडर में {{name}} का कोई अपॉइंटमेंट नहीं है।"
     },
     "suggest": {
       "today": "आज का शेड्यूल",
@@ -571,7 +596,8 @@
       "doctorFree": "कल {{doctor}} के ख़ाली स्लॉट",
       "nextFor": "{{name}} की अगली विज़िट",
       "profile": "{{name}} के बारे में",
-      "historyFor": "{{name}} की पिछली विज़िट"
+      "historyFor": "{{name}} की पिछली विज़िट",
+      "openCalendar": "{{name}} का अपॉइंटमेंट खोलें"
     },
     "voiceError": "सहायक अभी उपलब्ध नहीं है। फिर कोशिश करें।"
   },
@@ -591,5 +617,16 @@
     "intake": "मरीज़ पंजीकरण",
     "patient": "मरीज़",
     "openPatient": "मरीज़ खोलें"
+  },
+  "voiceOrb": {
+    "state": {
+      "idle": "तैयार",
+      "connecting": "जुड़ रहा है",
+      "listening": "सुन रहा है",
+      "thinking": "सोच रहा है",
+      "speaking": "बोल रहा है",
+      "error": "त्रुटि"
+    },
+    "time": "बातचीत का समय"
   }
 }
