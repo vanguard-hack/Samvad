@@ -71,10 +71,9 @@ export function ChatComposer({ onSend, onStop, pending, autoFocus, ref }: Props)
         }}
         aria-label={t("assistant.composer.label")}
         placeholder={t("assistant.composer.placeholder")}
-        className="block max-h-40 min-h-12 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:outline-none"
+        className="block max-h-32 min-h-10 w-full resize-none bg-transparent px-3.5 pt-2.5 pb-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:outline-none"
       />
-      <div className="flex items-center justify-between gap-2 px-3 pb-2">
-        <p className="hidden text-[11px] text-muted-foreground sm:block">{t("assistant.composer.hint")}</p>
+      <div className="flex items-center justify-between gap-2 px-2.5 pb-1.5">
         <span className="ms-auto flex items-center gap-2">
           {value.length > MAX_LENGTH * 0.8 && (
             <span className="text-[11px] text-muted-foreground tabular-nums">

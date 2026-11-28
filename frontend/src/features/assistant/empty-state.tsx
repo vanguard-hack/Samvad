@@ -47,21 +47,21 @@ export function EmptyState({ starters, onPick }: { starters: Suggestion[]; onPic
       : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: EASE_OUT, delay } }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 py-8 text-center sm:py-12">
+    <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 py-2 text-center sm:py-4">
       <motion.div
         initial={reduced ? false : { opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: EASE_OUT }}
       >
-        <AssistantOrb size="lg" />
+        <AssistantOrb size="md" />
       </motion.div>
 
-      <motion.div {...rise(0.1)} className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">
+      <motion.div {...rise(0.1)} className="flex flex-col gap-1.5">
+        <p className="text-xs text-muted-foreground">
           {first ? t(`assistant.empty.greeting.${greetingKey()}`, { name: first }) : t(`assistant.empty.greetingAnon.${greetingKey()}`)}
         </p>
-        <h2 className="text-display font-semibold tracking-display text-balance">{t("assistant.empty.title")}</h2>
-        <p className="mx-auto max-w-md text-sm text-balance text-muted-foreground">{t("assistant.empty.body")}</p>
+        <h2 className="text-xl font-semibold tracking-display text-balance">{t("assistant.empty.title")}</h2>
+        <p className="mx-auto max-w-md text-xs text-balance text-muted-foreground">{t("assistant.empty.body")}</p>
       </motion.div>
 
       <div className="grid w-full gap-2 sm:grid-cols-2">
@@ -73,12 +73,12 @@ export function EmptyState({ starters, onPick }: { starters: Suggestion[]; onPic
               type="button"
               onClick={() => onPick(s)}
               {...rise(0.2 + i * 0.06)}
-              className="group flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-start shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/30 hover:shadow-md"
+              className="group flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-start shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/30 hover:shadow-md"
             >
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-                <Icon className="size-4" />
+              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                <Icon className="size-3.5" />
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{text(s.label)}</span>
+              <span className="min-w-0 flex-1 truncate text-xs font-medium">{text(s.label)}</span>
               <ArrowUpRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 rtl:-scale-x-100" />
             </motion.button>
           )
