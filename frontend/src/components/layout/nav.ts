@@ -11,7 +11,6 @@ import {
   UsersIcon,
   type LucideIcon,
 } from "lucide-react"
-import { PENDING_APPROVAL_COUNT } from "@/data/sample"
 import { DoctorIcon } from "@/features/assistant/doctor-icon"
 import { CONSULTATION_STEPS } from "@/features/consultation/steps"
 
@@ -43,7 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: "clinical",
     items: [
-      { key: "approvals", to: "/approvals", icon: ClipboardCheckIcon, badge: PENDING_APPROVAL_COUNT, phase: 3 },
+      { key: "approvals", to: "/approvals", icon: ClipboardCheckIcon, phase: 3 },
       { key: "prescriptions", to: "/prescriptions", icon: PillIcon, phase: 3 },
       { key: "reports", to: "/reports", icon: FileTextIcon, phase: 3 },
     ],

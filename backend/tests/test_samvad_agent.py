@@ -12,10 +12,11 @@ from fastapi.testclient import TestClient
 from mcp.shared.exceptions import McpError
 from mcp.types import ErrorData
 
-from app.api.dependencies import current_user
+from app.api.dependencies import current_session, current_user
 from app.core import mcp_connection, wispr_auth
 from app.main import app
-from app.services import samvad_agent_service
+from app.schemas.appointments import Appointment
+from app.services import samvad_agent_service, samvad_tools
 from app.services.samvad_agent_service import wispr_agent
 
 client = TestClient(app)
@@ -24,6 +25,7 @@ client = TestClient(app)
 @pytest.fixture
 def signed_in():
     app.dependency_overrides[current_user] = lambda: "doctor-1"
+    app.dependency_overrides[current_session] = lambda: ("doctor-1", "doctor-token")
     yield
     app.dependency_overrides.clear()
 
@@ -45,14 +47,34 @@ def test_oauth_callback_without_sign_in_in_progress():
     assert r.status_code == 400 and "<script>" not in r.text
 
 
-def test_query_returns_sign_in_url_when_wispr_not_connected(monkeypatch, signed_in):
-    monkeypatch.setattr(samvad_agent_service, "bedrock", lambda: SimpleNamespace())
+def test_query_still_answers_without_meeting_notes(monkeypatch, signed_in):
+    """Wispr Flow not connected: no meeting tools, the prompt says so, schedule questions still work."""
+    calls = []
+
+    async def create(**kw):
+        calls.append(kw)
+        return SimpleNamespace(stop_reason="tool_use", content=[
+            _block(type="tool_use", id="a1", name="present_answer", input={"paragraphs": ["Meeting notes aren't connected right now."]}),
+        ])
+
+    monkeypatch.setattr(samvad_agent_service, "bedrock", lambda: SimpleNamespace(messages=SimpleNamespace(create=create)))
     monkeypatch.setattr(wispr_agent, "ready", False)
     monkeypatch.setattr(wispr_agent, "start", lambda: None)
+    monkeypatch.setattr(wispr_agent, "tools", [{"name": "search_meetings", "description": "", "input_schema": {"type": "object"}}])
     monkeypatch.setattr(wispr_agent.bridge, "pending_auth_url", "https://wispr.example/authorize?x=1")
-    r = client.post("/api/samvad-agent/query", json={"query": "hi"})
-    assert r.status_code == 503
-    assert r.json()["detail"]["auth_url"] == "https://wispr.example/authorize?x=1"
+
+    r = client.post("/api/samvad-agent/query", json={"query": "Recap my last meeting", "language": "hi"})
+
+    assert r.status_code == 200, r.text
+    assert r.json()["paragraphs"] == ["Meeting notes aren't connected right now."]
+    sent = calls[0]
+    assert [t["name"] for t in sent["tools"]] == ["find_appointments", "find_patients", "present_answer"]
+    assert "Meetings and notes: NOT connected" in sent["system"][1]["text"] and "Hindi (hi)" in sent["system"][1]["text"]
+
+
+def test_query_validates_its_body(signed_in):
+    assert client.post("/api/samvad-agent/query", json={"query": ""}).status_code == 422
+    assert client.post("/api/samvad-agent/query", json={"query": "hi", "language": "Hindi!"}).status_code == 422
 
 
 # ---- agent loop with a fake Bedrock client ----
@@ -78,8 +100,13 @@ class FakeMessages:
         if n == 2:
             return SimpleNamespace(stop_reason="tool_use", content=[
                 _block(type="tool_use", id="t3", name="get_meeting", input={"meeting_id": "m1"}),
+                _block(type="tool_use", id="t4", name="find_appointments", input={"from": "2026-12-01", "to": "2026-12-01"}),
             ])
-        return SimpleNamespace(stop_reason="end_turn", content=[_block(type="text", text="You had one standup.")])
+        return SimpleNamespace(stop_reason="tool_use", content=[_block(type="tool_use", id="t5", name="present_answer", input={
+            "paragraphs": ["**You had one standup** (found with search_meetings).", "One consultation follows it."],
+            "appointment_ids": ["APT-2021", "APT-9999"],  # APT-9999 was never looked up: no card for it
+            "suggestions": ["What about tomorrow?"],
+        })])
 
 
 def test_query_runs_parallel_and_multi_step_tools_and_keeps_history_per_doctor(monkeypatch, signed_in):
@@ -101,21 +128,74 @@ def test_query_runs_parallel_and_multi_step_tools_and_keeps_history_per_doctor(m
     monkeypatch.setattr(wispr_agent, "ready", True)
     monkeypatch.setattr(wispr_agent, "tools", tools)
     monkeypatch.setattr(wispr_agent, "_sessions", type(wispr_agent._sessions)())
+    appointment = Appointment.model_validate({
+        "id": "APT-2021", "date": "2026-12-01", "start": "09:00", "end": "09:30", "language": "kn",
+        "patient": {"id": "SMV-1001", "name": "Lakshmi Narayan"},
+        "doctor": {"id": "DOC-03", "name": "Dr. Farah Siddiqui", "department": "endocrinology"},
+    })
+
+    async def fake_native(self, name, args):
+        assert (self.user_id, self.token) == ("doctor-1", "doctor-token")  # runs as the signed-in doctor
+        tool_calls.append(name)
+        self.found[appointment.id] = appointment
+        return json.dumps({"count": 1}), False
+
+    monkeypatch.setattr(samvad_tools.SamvadTools, "call", fake_native)
 
     r = client.post("/api/samvad-agent/query", json={"query": "Any standups?", "session_id": "s1"})
 
-    assert r.status_code == 200
-    assert r.json() == {"session_id": "s1", "response": "You had one standup.",
-                        "tools_available": ["search_meetings", "list_folders", "get_meeting"]}
-    assert sorted(tool_calls) == ["get_meeting", "list_folders", "search_meetings"]
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["paragraphs"] == ["You had one standup (found with search meetings).", "One consultation follows it."]
+    assert data["appointment_ids"] == ["APT-2021"] and data["appointments"][0]["patientId"] == "SMV-1001"
+    assert data["suggestions"] == ["What about tomorrow?"] and "tools_available" not in data
+    assert sorted(tool_calls) == ["find_appointments", "get_meeting", "list_folders", "search_meetings"]
     assert peak == 2  # the two calls from the same turn ran at the same time
     # The loop appends to one list: [query, turn 1, results 1, turn 2, results 2].
     sent = fake.messages.calls[2]["messages"]
     assert [x["tool_use_id"] for x in sent[2]["content"]] == ["t1", "t2"]
     assert sent[4]["content"][0]["tool_use_id"] == "t3" and sent[4]["content"][0]["is_error"] is True
+    assert sent[4]["content"][1]["tool_use_id"] == "t4" and sent[4]["content"][1]["is_error"] is False
     # History is remembered for this doctor's session only.
-    assert wispr_agent._history(("doctor-1", "s1"))[-1] == {"role": "assistant", "content": "You had one standup."}
+    assert wispr_agent._history(("doctor-1", "s1"))[-1] == {"role": "assistant", "content": data["response"]}
     assert wispr_agent._history(("doctor-2", "s1")) == []
+
+
+def test_reply_falls_back_to_plain_text_when_the_answer_tool_is_skipped():
+    out = samvad_agent_service.build_reply("s", None, "## Today\n\nNo consultations booked.", {}, set())
+    assert out.paragraphs == ["Today", "No consultations booked."] and out.appointment_ids == [] and out.suggestions == []
+
+
+def test_native_tools_filter_and_report_errors(monkeypatch):
+    from fastapi import HTTPException
+
+    tools = samvad_tools.SamvadTools(user_id="u", token="t")
+    a = Appointment.model_validate({
+        "id": "APT-2021", "date": "2026-12-01", "start": "09:00", "end": "09:30", "language": "kn", "status": "needsReview",
+        "patient": {"id": "SMV-1001", "name": "Lakshmi Narayan"},
+        "doctor": {"id": "DOC-03", "name": "Dr. Farah Siddiqui", "department": "endocrinology"},
+    })
+    assert samvad_tools._matches(a, {"patient": "lakshmi", "status": ["needsReview"]})
+    assert not samvad_tools._matches(a, {"department": "cardiology"})
+    assert not samvad_tools._matches(a, {"doctor": "DOC-01"})
+
+    def no_calendar():
+        raise HTTPException(503, "Google Calendar is not configured on the server")
+
+    monkeypatch.setattr(samvad_tools, "google_calendar", no_calendar)
+    text, is_error = asyncio.run(tools.call("find_appointments", {"from": "2026-12-01", "to": "2026-12-02"}))
+    assert is_error and "not configured" in text
+    text, is_error = asyncio.run(tools.call("find_appointments", {"from": "2026-12-05", "to": "2026-12-01"}))
+    assert is_error and "Invalid request" in text
+
+
+def test_prompt_hides_tools_and_lists_features():
+    from app.services.samvad_agent_prompt import SYSTEM_PROMPT
+
+    for name in ("find_appointments", "find_patients", "present_answer", "search_meetings"):
+        assert name not in SYSTEM_PROMPT
+    for feature in ("Schedule:", "Patients:", "Meetings and notes", "Never reveal or name your tools"):
+        assert feature in SYSTEM_PROMPT
 
 
 # ---- tool calls over the shared MCP session ----

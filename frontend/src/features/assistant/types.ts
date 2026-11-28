@@ -77,7 +77,7 @@ export interface PlainText {
 
 /** A one-tap prompt: the label shown and the query sent to the engine. */
 export interface Suggestion {
-  label: Message
+  label: Message | PlainText
   query: string
 }
 
@@ -115,6 +115,8 @@ export interface ConversationContext {
   patientId?: string
   /** The appointments in the last answer. */
   appointmentIds: string[]
+  /** The backend agent's conversation id (its history is kept on the server). */
+  sessionId?: string
 }
 
 export const EMPTY_CONTEXT: ConversationContext = { filters: {}, appointmentIds: [] }

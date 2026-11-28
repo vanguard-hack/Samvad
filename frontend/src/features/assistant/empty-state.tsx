@@ -66,7 +66,7 @@ export function EmptyState({ starters, onPick }: { starters: Suggestion[]; onPic
 
       <div className="grid w-full gap-2 sm:grid-cols-2">
         {starters.map((s, i) => {
-          const Icon = STARTER_ICONS[s.label.key] ?? CalendarClock
+          const Icon = ("key" in s.label ? STARTER_ICONS[s.label.key] : undefined) ?? CalendarClock
           return (
             <motion.button
               key={s.query}

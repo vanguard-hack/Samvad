@@ -8,7 +8,7 @@ checks its `state` against the sign-in it started.
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
-from app.api.dependencies import current_user
+from app.api.dependencies import current_session, current_user
 from app.schemas.samvad_agent import AgentQueryIn, AgentQueryOut
 from app.services.samvad_agent_service import wispr_agent
 
@@ -16,8 +16,10 @@ router = APIRouter()
 
 
 @router.post("/query", response_model=AgentQueryOut)
-async def query(body: AgentQueryIn, user: str = Depends(current_user)) -> AgentQueryOut:
-    return await wispr_agent.query(user, body)
+async def query(body: AgentQueryIn, session: tuple[str, str] = Depends(current_session)) -> AgentQueryOut:
+    """The Samvad Assistant: answers from the doctor's schedule, patients and (when connected) meeting notes."""
+    user_id, token = session
+    return await wispr_agent.query(user_id, token, body)
 
 
 @router.get("/tools")

@@ -1,4 +1,10 @@
-"""Samvad agent: Claude (on Amazon Bedrock) answering questions with the Wispr Flow MCP tools.
+"""Samvad agent: Claude (on Amazon Bedrock) for the Samvad Assistant page.
+
+Claude answers from the doctor's schedule and patients (services/samvad_tools.py, run
+as the signed-in doctor) and from the read-only Wispr Flow MCP tools (meetings and
+notes). It finishes by calling a `present_answer` tool, so the page gets a
+structured reply: paragraphs, appointment cards and follow-up suggestions. The
+prompt is in services/samvad_agent_prompt.py.
 
 Ported from wispr_agent/app.py. The LangChain + LiteLLM agent there is replaced by
 the same tool-use loop the voice assistant uses, on the shared Bedrock client, so
@@ -19,12 +25,15 @@ the API needs only the `mcp` package on top of what it already has.
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import json
 import logging
+import re
 import time
 from collections import OrderedDict
 from datetime import timedelta
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 from anthropic import APIConnectionError, APIStatusError, RateLimitError
@@ -37,7 +46,11 @@ from app.core.bedrock import bedrock
 from app.core.config import get_settings
 from app.core.mcp_connection import McpConnection, root_cause
 from app.core.wispr_auth import FileTokenStorage, OAuthBridge, StoredTokenAuth, StoredTokenError, has_tokens, seed_token_file
+from app.schemas.appointments import Appointment
 from app.schemas.samvad_agent import AgentQueryIn, AgentQueryOut
+from app.services import samvad_tools
+from app.services.samvad_agent_prompt import SYSTEM_PROMPT, context_block
+from app.services.samvad_tools import ANSWER_TOOL, SamvadTools, humanize_tool_names, today_line
 
 log = logging.getLogger("samvad.agent")
 
@@ -49,19 +62,13 @@ MAX_TURNS = 20  # remembered user + assistant turns per conversation
 MAX_SESSIONS = 200
 SESSION_TTL_S = 3600
 
-SYSTEM_PROMPT = """You are the Samvad agent, an assistant connected to the doctor's Wispr Flow
-account through its MCP server. Wispr Flow access is READ-ONLY: Notetaker meetings,
-summaries, transcripts, attendees, calendar events and Scratchpad notes.
-
-- When asked what you can do, or to list tools/functionalities, describe EVERY tool
-  you have: its name, what it does, and its key parameters. Group them by purpose
-  (meetings, transcripts, calendar, notes, account) and give one example question each.
-- For data questions, call the tools; never invent meetings, notes or attendees.
-- When several lookups don't depend on each other, request them together in one turn.
-- Long transcripts come back in portions; fetch further portions if needed.
-- If a tool says "Too many requests", tell the user to retry in about a minute.
-- Never diagnose, prescribe, or suggest medicines or doses; clinical decisions are the doctor's.
-"""
+MAX_PARAGRAPHS = 8
+MAX_SUGGESTIONS = 3
+MAX_CARDS = 30
+REFUSAL = "Sorry, I can't help with that. I can help with your schedule, your patients and your meeting notes."
+TOO_MANY_STEPS = "That needed too many steps. Try a narrower question, for example one day or one patient."
+APPOINTMENT_ID = re.compile(r"\bAPT-\d{4,}\b")
+MARKDOWN = re.compile(r"(\*\*|__|`+|^#{1,6}\s+)", re.MULTILINE)
 
 
 def _tool_result_text(result: Any) -> str:
@@ -229,38 +236,67 @@ class WisprAgent:
         return turns
 
     # ---- agent ----
-    async def query(self, user_id: str, body: AgentQueryIn) -> AgentQueryOut:
+    async def meetings_ready(self) -> bool:
+        """Whether the Wispr Flow tools can be used; the agent still answers schedule questions without them."""
+        try:
+            await self.wait_ready()
+        except HTTPException:
+            return False
+        return True
+
+    async def _run_tool(self, name: str, args: dict, native: SamvadTools) -> tuple[str, bool]:
+        if name in samvad_tools.NAMES:
+            return await native.call(name, args)
+        try:
+            return await self.call_tool(name, args)
+        except HTTPException as exc:  # Wispr Flow dropped mid-conversation: tell Claude, keep going
+            detail = exc.detail.get("message") if isinstance(exc.detail, dict) else exc.detail
+            return f"Meetings and notes are unavailable: {detail}", True
+
+    async def query(self, user_id: str, token: str, body: AgentQueryIn) -> AgentQueryOut:
         s = get_settings()
         client = bedrock()  # 503 when Bedrock isn't configured
-        await self.wait_ready()
+        meetings = await self.meetings_ready()
+        native = SamvadTools(user_id=user_id, token=token)
+        tools = [*samvad_tools.TOOLS, *(self.tools if meetings else [])]
+        tool_names = {t["name"] for t in tools}
+        system = [
+            # Tools + this block are identical on every call, so that prefix is cached.
+            {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": context_block(today_line(_now(s.google_calendar_timezone)), body.language, meetings)},
+        ]
 
         history = self._history((user_id, body.session_id))
         messages: list[dict] = [*history, {"role": "user", "content": body.query}]
-        reply = ""
+        answer: dict[str, Any] | None = None
+        fallback = ""
         try:
             for _ in range(MAX_STEPS):
                 response = await client.messages.create(
                     model=s.bedrock_model,
                     max_tokens=4000,
-                    # Tools + system are identical on every call, so this prefix is cached.
-                    system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-                    tools=self.tools,
+                    system=system,
+                    tools=tools,
                     thinking={"type": "adaptive"},
                     messages=messages,
                 )
                 if response.stop_reason == "refusal":
-                    reply = "Sorry, I can't help with that."
+                    answer = {"paragraphs": [REFUSAL]}
+                    break
+                calls = [b for b in response.content if b.type == "tool_use"]
+                final = next((c for c in calls if c.name == ANSWER_TOOL), None)
+                if final is not None:
+                    answer = final.input if isinstance(final.input, dict) else {}
                     break
                 texts = [b.text.strip() for b in response.content if b.type == "text" and b.text.strip()]
-                calls = [b for b in response.content if b.type == "tool_use"]
                 if texts:
-                    reply = "\n\n".join(texts)
+                    fallback = "\n\n".join(texts)
                 if response.stop_reason != "tool_use" or not calls:
                     break
 
                 messages.append({"role": "assistant", "content": [b.model_dump(exclude_none=True) for b in response.content]})
-                # Read-only lookups that Claude asked for together: run them in parallel.
-                outcomes = await asyncio.gather(*(self.call_tool(c.name, c.input) for c in calls))
+                # Lookups Claude asked for together run in parallel.
+                outcomes = await asyncio.gather(*(self._run_tool(c.name, c.input, native) for c in calls))
                 messages.append({
                     "role": "user",
                     "content": [
@@ -269,19 +305,64 @@ class WisprAgent:
                     ],
                 })
             else:
-                reply = reply or "That took too many steps. Try a narrower question."
+                fallback = fallback or TOO_MANY_STEPS
         except RateLimitError:
-            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Agent is busy, try again in a moment") from None
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "The assistant is busy, try again in a moment") from None
         except APIStatusError as exc:
             log.warning("Bedrock error %s", exc.status_code)
-            raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Agent error") from None
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, "The assistant could not answer, try again") from None
         except APIConnectionError:
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Could not reach the agent model") from None
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Could not reach the assistant model") from None
 
-        reply = reply or "Done."
-        history += [{"role": "user", "content": body.query}, {"role": "assistant", "content": reply}]
+        out = build_reply(body.session_id, answer, fallback, native.found, tool_names)
+        history += [{"role": "user", "content": body.query}, {"role": "assistant", "content": out.response}]
         del history[:-MAX_TURNS]
-        return AgentQueryOut(session_id=body.session_id, response=reply, tools_available=[t["name"] for t in self.tools])
+        return out
+
+
+def _now(timezone: str) -> dt.datetime:
+    try:
+        return dt.datetime.now(ZoneInfo(timezone))
+    except (ZoneInfoNotFoundError, ValueError):
+        return dt.datetime.now(dt.UTC)
+
+
+def _clean(text: Any, tool_names: set[str]) -> str:
+    """Plain text for the page: no markdown, no internal tool names."""
+    text = MARKDOWN.sub("", str(text)).strip()
+    return humanize_tool_names(text, tool_names)
+
+
+def build_reply(
+    session_id: str,
+    answer: dict[str, Any] | None,
+    fallback: str,
+    found: dict[str, Appointment],
+    tool_names: set[str],
+) -> AgentQueryOut:
+    """The page's reply from Claude's answer (or its plain text when it skipped the answer tool)."""
+    answer = answer or {}
+    raw = answer.get("paragraphs")
+    if not isinstance(raw, list) or not raw:
+        raw = re.split(r"\n\s*\n", fallback) if fallback else ["Done."]
+    paragraphs = [p for p in (_clean(x, tool_names) for x in raw) if p][:MAX_PARAGRAPHS] or ["Done."]
+
+    ids = answer.get("appointment_ids")
+    if not isinstance(ids, list):
+        ids = APPOINTMENT_ID.findall(" ".join(paragraphs))
+    # Only appointments a lookup returned this turn: never a card for an id Claude made up.
+    shown = list(dict.fromkeys(str(i) for i in ids if str(i) in found))[:MAX_CARDS]
+
+    suggestions = answer.get("suggestions")
+    suggestions = [_clean(x, tool_names)[:120] for x in suggestions] if isinstance(suggestions, list) else []
+    return AgentQueryOut(
+        session_id=session_id,
+        response="\n\n".join(paragraphs),
+        paragraphs=paragraphs,
+        appointment_ids=shown,
+        appointments=[found[i] for i in shown],
+        suggestions=[x for x in suggestions if x][:MAX_SUGGESTIONS],
+    )
 
 
 wispr_agent = WisprAgent()
