@@ -9,6 +9,7 @@ import { PatientsPage } from '@/pages/patients-page'
 import { ProfilePage } from '@/pages/profile-page'
 import { SectionPlaceholderPage } from '@/pages/section-placeholder-page'
 import { ResetPasswordPage } from '@/pages/reset-password-page'
+import { SamvadAssistantPage } from '@/pages/samvad-assistant-page'
 import { SignInPage } from '@/pages/sign-in-page'
 import { StepPlaceholderPage } from '@/pages/step-placeholder-page'
 
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="patients" element={<Navigate to="/" replace />} />
         <Route path="interpreter" element={<InterpreterPage />} />
         <Route path="consultations" element={<ConsultationsPage />} />
+        <Route path="samvad-assistant" element={<SamvadAssistantPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="patients/:patientId"

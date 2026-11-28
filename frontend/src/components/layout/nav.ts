@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { PENDING_APPROVAL_COUNT } from "@/data/sample"
+import { DoctorIcon } from "@/features/assistant/doctor-icon"
 import { CONSULTATION_STEPS } from "@/features/consultation/steps"
 
 export interface NavItem {
@@ -34,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "patients", to: "/", icon: UsersIcon },
       { key: "interpreter", to: "/interpreter", icon: AudioLinesIcon },
       { key: "consultations", to: "/consultations", icon: MessagesSquareIcon },
+      { key: "assistant", to: "/samvad-assistant", icon: DoctorIcon },
     ],
   },
   {

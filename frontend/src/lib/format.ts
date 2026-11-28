@@ -48,6 +48,12 @@ export function formatShortDate(iso: string, uiLanguage: string) {
   return new Intl.DateTimeFormat(intlLocale(uiLanguage), { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(y, m - 1, d))
 }
 
+/** ISO date (yyyy-mm-dd) → "Fri, 4 Dec" in the doctor's locale. */
+export function formatWeekdayDate(iso: string, uiLanguage: string) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Intl.DateTimeFormat(intlLocale(uiLanguage), { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(y, m - 1, d))
+}
+
 /** "09:00", "09:30" → "9:00 AM - 9:30 AM". */
 export function formatTimeSlot(start: string, end: string, uiLanguage: string) {
   return `${formatClock(start, uiLanguage)} - ${formatClock(end, uiLanguage)}`
