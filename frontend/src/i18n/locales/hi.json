@@ -107,6 +107,48 @@
     "phoneMasked": "गोपनीयता के लिए छिपाया गया",
     "pictureMode": "चित्र मोड — इस भाषा में आवाज़ उपलब्ध नहीं"
   },
+  "consultations": {
+    "title": "परामर्श",
+    "subtitle": "हर अपॉइंटमेंट, उसका समय और उसकी स्थिति।",
+    "searchPlaceholder": "अपॉइंटमेंट ID से खोजें…",
+    "filterByDate": "तारीख़ से छाँटें",
+    "clearDate": "तारीख़ हटाएँ",
+    "col": {
+      "id": "अपॉइंटमेंट ID",
+      "patientId": "मरीज़ ID",
+      "date": "तारीख़",
+      "timeSlot": "समय",
+      "language": "भाषा",
+      "visits": "मुलाक़ातें",
+      "status": "स्थिति"
+    },
+    "status": {
+      "scheduled": "तय",
+      "active": "सक्रिय",
+      "needsReview": "समीक्षा ज़रूरी",
+      "followUp": "फ़ॉलो-अप",
+      "closed": "बंद"
+    },
+    "department": {
+      "generalMedicine": "सामान्य चिकित्सा",
+      "cardiology": "हृदय रोग",
+      "endocrinology": "एंडोक्राइनोलॉजी",
+      "orthopaedics": "हड्डी रोग",
+      "pulmonology": "फेफड़ा रोग"
+    },
+    "open": "अपॉइंटमेंट देखें",
+    "dialog": {
+      "title": "अपॉइंटमेंट",
+      "description": "इस अपॉइंटमेंट का विवरण।",
+      "patientName": "मरीज़ का नाम",
+      "doctorId": "डॉक्टर ID",
+      "doctorName": "डॉक्टर का नाम",
+      "department": "विभाग",
+      "setStatus": "अपॉइंटमेंट की स्थिति",
+      "generateReport": "रिपोर्ट बनाएँ",
+      "reportUnavailable": "रिपोर्ट बैकएंड के साथ आएगी।"
+    }
+  },
   "section": {
     "title": "{{name}} चरण {{n}} में आएगा",
     "body": "यह स्क्रीन प्लेसहोल्डर है ताकि पूरे नेविगेशन की समीक्षा हो सके।",

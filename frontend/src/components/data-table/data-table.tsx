@@ -47,6 +47,12 @@ interface DataTableProps<TData extends RowData> {
   toolbar?: React.ReactNode
   /** Highlights a row (e.g. the consultation in session). */
   isRowHighlighted?: (row: TData) => boolean
+  /**
+   * Jump back to the first page whenever data, sorting or filters change
+   * (TanStack's default). Pass false when rows are edited in place, so an edit
+   * keeps the doctor on the page they were on.
+   */
+  autoResetPageIndex?: boolean
 }
 
 export function DataTable<TData extends RowData>({
@@ -57,6 +63,7 @@ export function DataTable<TData extends RowData>({
   pageSize,
   toolbar,
   isRowHighlighted,
+  autoResetPageIndex,
 }: DataTableProps<TData>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -72,6 +79,7 @@ export function DataTable<TData extends RowData>({
     features,
     data,
     columns,
+    autoResetPageIndex,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
@@ -84,6 +92,11 @@ export function DataTable<TData extends RowData>({
 
   const pageCount = table.getPageCount()
   const total = table.getFilteredRowModel().rows.length
+
+  // Without the auto reset, a filter can leave the current page past the end.
+  React.useEffect(() => {
+    if (pageCount > 0 && pagination.pageIndex >= pageCount) table.setPageIndex(pageCount - 1)
+  }, [pageCount, pagination.pageIndex, table])
 
   // "auto": measure the space the table may occupy and fit whole rows into it.
   React.useLayoutEffect(() => {

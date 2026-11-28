@@ -107,6 +107,48 @@
     "phoneMasked": "ಗೌಪ್ಯತೆಗಾಗಿ ಮರೆಮಾಡಲಾಗಿದೆ",
     "pictureMode": "ಚಿತ್ರ ಮೋಡ್ — ಈ ಭಾಷೆಗೆ ಧ್ವನಿ ಇಲ್ಲ"
   },
+  "consultations": {
+    "title": "ಸಮಾಲೋಚನೆಗಳು",
+    "subtitle": "ಪ್ರತಿ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್, ಅದರ ಸಮಯ ಮತ್ತು ಸ್ಥಿತಿ.",
+    "searchPlaceholder": "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ID ಮೂಲಕ ಹುಡುಕಿ…",
+    "filterByDate": "ದಿನಾಂಕದ ಮೂಲಕ ಫಿಲ್ಟರ್ ಮಾಡಿ",
+    "clearDate": "ದಿನಾಂಕ ತೆರವುಗೊಳಿಸಿ",
+    "col": {
+      "id": "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ID",
+      "patientId": "ರೋಗಿಯ ID",
+      "date": "ದಿನಾಂಕ",
+      "timeSlot": "ಸಮಯ",
+      "language": "ಭಾಷೆ",
+      "visits": "ಭೇಟಿಗಳು",
+      "status": "ಸ್ಥಿತಿ"
+    },
+    "status": {
+      "scheduled": "ನಿಗದಿಯಾಗಿದೆ",
+      "active": "ಸಕ್ರಿಯ",
+      "needsReview": "ಪರಿಶೀಲನೆ ಬೇಕು",
+      "followUp": "ಫಾಲೋ-ಅಪ್",
+      "closed": "ಮುಚ್ಚಲಾಗಿದೆ"
+    },
+    "department": {
+      "generalMedicine": "ಸಾಮಾನ್ಯ ವೈದ್ಯಕೀಯ",
+      "cardiology": "ಹೃದ್ರೋಗ",
+      "endocrinology": "ಅಂತಃಸ್ರಾವಶಾಸ್ತ್ರ",
+      "orthopaedics": "ಮೂಳೆ ಚಿಕಿತ್ಸೆ",
+      "pulmonology": "ಶ್ವಾಸಕೋಶ ಚಿಕಿತ್ಸೆ"
+    },
+    "open": "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ನೋಡಿ",
+    "dialog": {
+      "title": "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್",
+      "description": "ಈ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್‌ನ ವಿವರಗಳು.",
+      "patientName": "ರೋಗಿಯ ಹೆಸರು",
+      "doctorId": "ವೈದ್ಯರ ID",
+      "doctorName": "ವೈದ್ಯರ ಹೆಸರು",
+      "department": "ವಿಭಾಗ",
+      "setStatus": "ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಸ್ಥಿತಿ",
+      "generateReport": "ವರದಿ ರಚಿಸಿ",
+      "reportUnavailable": "ವರದಿಗಳು ಬ್ಯಾಕೆಂಡ್ ಜೊತೆ ಬರುತ್ತವೆ."
+    }
+  },
   "section": {
     "title": "{{name}} ಹಂತ {{n}} ರಲ್ಲಿ ಬರಲಿದೆ",
     "body": "ಸಂಪೂರ್ಣ ನ್ಯಾವಿಗೇಶನ್ ಪರಿಶೀಲಿಸಲು ಈ ಪರದೆ ತಾತ್ಕಾಲಿಕವಾಗಿದೆ.",

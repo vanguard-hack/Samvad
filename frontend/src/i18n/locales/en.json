@@ -107,6 +107,48 @@
     "phoneMasked": "Masked for privacy",
     "pictureMode": "Picture mode — no voice for this language"
   },
+  "consultations": {
+    "title": "Consultations",
+    "subtitle": "Every appointment, its slot and where it stands.",
+    "searchPlaceholder": "Search by appointment ID…",
+    "filterByDate": "Filter by date",
+    "clearDate": "Clear date",
+    "col": {
+      "id": "Appointment ID",
+      "patientId": "Patient ID",
+      "date": "Date",
+      "timeSlot": "Time slot",
+      "language": "Language",
+      "visits": "Visits",
+      "status": "Status"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "active": "Active",
+      "needsReview": "Needs review",
+      "followUp": "Follow-up",
+      "closed": "Closed"
+    },
+    "department": {
+      "generalMedicine": "General Medicine",
+      "cardiology": "Cardiology",
+      "endocrinology": "Endocrinology",
+      "orthopaedics": "Orthopaedics",
+      "pulmonology": "Pulmonology"
+    },
+    "open": "View appointment",
+    "dialog": {
+      "title": "Appointment",
+      "description": "Details of this appointment.",
+      "patientName": "Patient name",
+      "doctorId": "Doctor ID",
+      "doctorName": "Doctor name",
+      "department": "Department",
+      "setStatus": "Appointment status",
+      "generateReport": "Generate report",
+      "reportUnavailable": "Reports arrive with the backend."
+    }
+  },
   "section": {
     "title": "{{name}} is coming in phase {{n}}",
     "body": "This screen is a placeholder so the navigation can be reviewed end to end.",

@@ -107,6 +107,48 @@
     "phoneMasked": "தனியுரிமைக்காக மறைக்கப்பட்டது",
     "pictureMode": "படப் பயன்முறை — இந்த மொழிக்குக் குரல் இல்லை"
   },
+  "consultations": {
+    "title": "ஆலோசனைகள்",
+    "subtitle": "ஒவ்வொரு சந்திப்பும், அதன் நேரமும் நிலையும்.",
+    "searchPlaceholder": "சந்திப்பு ID மூலம் தேடுக…",
+    "filterByDate": "தேதி வாரியாக வடிகட்டு",
+    "clearDate": "தேதியை அழி",
+    "col": {
+      "id": "சந்திப்பு ID",
+      "patientId": "நோயாளி ID",
+      "date": "தேதி",
+      "timeSlot": "நேரம்",
+      "language": "மொழி",
+      "visits": "வருகைகள்",
+      "status": "நிலை"
+    },
+    "status": {
+      "scheduled": "திட்டமிடப்பட்டது",
+      "active": "செயலில்",
+      "needsReview": "மதிப்பாய்வு தேவை",
+      "followUp": "பின்தொடர்தல்",
+      "closed": "மூடப்பட்டது"
+    },
+    "department": {
+      "generalMedicine": "பொது மருத்துவம்",
+      "cardiology": "இதயவியல்",
+      "endocrinology": "நாளமில்லாச் சுரப்பியியல்",
+      "orthopaedics": "எலும்பியல்",
+      "pulmonology": "நுரையீரலியல்"
+    },
+    "open": "சந்திப்பைப் பார்",
+    "dialog": {
+      "title": "சந்திப்பு",
+      "description": "இந்தச் சந்திப்பின் விவரங்கள்.",
+      "patientName": "நோயாளியின் பெயர்",
+      "doctorId": "மருத்துவர் ID",
+      "doctorName": "மருத்துவர் பெயர்",
+      "department": "துறை",
+      "setStatus": "சந்திப்பு நிலை",
+      "generateReport": "அறிக்கை உருவாக்கு",
+      "reportUnavailable": "அறிக்கைகள் பின்தளத்துடன் வரும்."
+    }
+  },
   "section": {
     "title": "{{name}} கட்டம் {{n}}-இல் வரும்",
     "body": "முழு வழிசெலுத்தலையும் மதிப்பாய்வு செய்ய இந்தத் திரை தற்காலிகமானது.",

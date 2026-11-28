@@ -33,7 +33,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "patients", to: "/", icon: UsersIcon },
       { key: "interpreter", to: "/interpreter", icon: AudioLinesIcon },
-      { key: "consultations", to: "/consultations", icon: MessagesSquareIcon, phase: 2 },
+      { key: "consultations", to: "/consultations", icon: MessagesSquareIcon },
     ],
   },
   {

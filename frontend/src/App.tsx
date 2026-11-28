@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { RedirectIfSignedIn, RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ALL_NAV_ITEMS } from '@/components/layout/nav'
+import { ConsultationsPage } from '@/pages/consultations-page'
 import { InterpreterPage } from '@/pages/interpreter-page'
 import { PatientsPage } from '@/pages/patients-page'
 import { ProfilePage } from '@/pages/profile-page'
@@ -47,6 +48,7 @@ export default function App() {
         <Route index element={<PatientsPage />} />
         <Route path="patients" element={<Navigate to="/" replace />} />
         <Route path="interpreter" element={<InterpreterPage />} />
+        <Route path="consultations" element={<ConsultationsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="patients/:patientId"
