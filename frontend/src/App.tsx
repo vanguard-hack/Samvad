@@ -3,12 +3,14 @@ import { RedirectIfSignedIn, RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ALL_NAV_ITEMS } from '@/components/layout/nav'
 import { ConversationsPage } from '@/pages/conversations-page'
+import { ConsultationsPage } from '@/pages/consultations-page'
 import { InterpreterPage } from '@/pages/interpreter-page'
 import { PatientDetailPage } from '@/pages/patient-detail-page'
 import { PatientsPage } from '@/pages/patients-page'
 import { ProfilePage } from '@/pages/profile-page'
 import { SectionPlaceholderPage } from '@/pages/section-placeholder-page'
 import { ResetPasswordPage } from '@/pages/reset-password-page'
+import { SamvadAssistantPage } from '@/pages/samvad-assistant-page'
 import { SignInPage } from '@/pages/sign-in-page'
 import { StepPlaceholderPage } from '@/pages/step-placeholder-page'
 
@@ -49,6 +51,8 @@ export default function App() {
         <Route path="patients" element={<Navigate to="/" replace />} />
         <Route path="interpreter" element={<InterpreterPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
+        <Route path="consultations" element={<ConsultationsPage />} />
+        <Route path="samvad-assistant" element={<SamvadAssistantPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         {PLACEHOLDER_SECTIONS.map((item) => (

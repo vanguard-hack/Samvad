@@ -20,15 +20,14 @@ Safety:
 
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import HTTPException, status
 from sarvamai.core.api_error import ApiError
 
-from . import languages
-from .auth import current_user
-from .config import get_settings
-
-router = APIRouter(prefix="/api/intake")
+from app.core import languages
+from app.core.config import get_settings
+from app.core.sarvam import sarvam as _sarvam
+from app.core.sarvam import upstream_error as _upstream
+from app.services.intake_parser import normalise, parse
 
 # Short and crisp on purpose: every extra word is time the patient waits.
 PROMPTS: dict[str, str] = {
@@ -48,41 +47,10 @@ PROMPTS: dict[str, str] = {
 # Fallback parser only (no Claude): fields read back before use (Critical Rule 5).
 CONFIRM_FIELDS = {"age", "phone", "allergies", "medicines", "consent"}
 
-CONDITION_WORDS = {
-    "diabetes": ("diabet", "sugar"),
-    "hypertension": ("blood pressure", "hypertension", " bp", "bp "),
-    "asthma": ("asthma", "breathing", "wheez"),
-    "heart": ("heart", "cardiac"),
-    "thyroid": ("thyroid",),
-    "kidney": ("kidney", "renal"),
-}
-
-NUMBER_WORDS = {
-    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
-    "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
-    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30,
-    "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
-}
-
-_YES = re.compile(r"\b(yes|yeah|yep|ok|okay|sure|correct|right|agree|of course|haan|ha|han|ji)\b")
-_NO = re.compile(r"\b(no|not|nope|none|nothing|never|don't|do not|nahi|nahin|wrong|incorrect)\b")
-
 # Translated fixed prompts never change; cache them per language (no patient data).
 _prompt_cache: dict[tuple[str, str], str] = {}
 # ...and so is their spoken audio, which makes each question start almost instantly.
 _audio_cache: dict[tuple[str, str], str] = {}
-
-
-def _sarvam():
-    from .main import sarvam  # late import: avoids a circular import
-
-    return sarvam()
-
-
-def _upstream(exc: ApiError) -> HTTPException:
-    from .main import upstream_error
-
-    return upstream_error(exc)
 
 
 async def to_language(text: str, lang: str) -> str:
@@ -109,141 +77,58 @@ async def to_english(text: str, lang: str) -> str:
     return r.translated_text
 
 
-# ── Parsing (pure functions, unit-tested) ────────────────────────────────────
-def yes_no(english: str) -> bool | None:
-    t = f" {english.lower()} "
-    no, yes = bool(_NO.search(t)), bool(_YES.search(t))
-    if no and not yes:
-        return False
-    if yes and not no:
-        return True
-    return None
+async def build_prompt(*, key: str, language: str, tts_code: str, value: str | None) -> dict:
+    """The question as text (patient's language + English) and spoken WAV (base64).
 
-
-def parse_number(text: str) -> int | None:
-    m = re.search(r"\d{1,3}", text)
-    if m:
-        return int(m.group())
-    total, seen = 0, False
-    for word in re.findall(r"[a-z]+", text.lower()):
-        if word in NUMBER_WORDS:
-            total += NUMBER_WORDS[word]
-            seen = True
-        elif word == "hundred" and seen:
-            total *= 100
-    return total if seen else None
-
-
-def parse(field: str, original: str, english: str) -> str | list[str] | None:
-    """Returns the form value, "" for an explicit 'no / none', or None if not understood."""
-    e = english.strip()
-    low = f" {e.lower()} "
-    if field == "age":
-        n = parse_number(original) if re.search(r"\d", original) else parse_number(e)
-        return str(n) if n is not None and 0 <= n <= 120 else None
-    if field == "sex":
-        if re.search(r"\b(female|woman|lady|girl|she)\b", low):
-            return "F"
-        if re.search(r"\b(male|man|gent|boy|he)\b", low):
-            return "M"
-        if re.search(r"\b(other|transgender|non-binary|third)\b", low):
-            return "O"
-        return None
-    if field == "phone":
-        digits = re.sub(r"\D", "", original) or re.sub(r"\D", "", e)
-        digits = digits[-10:] if len(digits) >= 10 else digits
-        if re.fullmatch(r"[6-9]\d{9}", digits):
-            return digits
-        return "" if yes_no(e) is False else None
-    if field in ("allergies", "medicines"):
-        if yes_no(e) is False and len(e.split()) <= 4:
-            return ""
-        return e or None
-    if field == "conditions":
-        found = [key for key, words in CONDITION_WORDS.items() if any(w in low for w in words)]
-        if found:
-            return found
-        return [] if yes_no(e) is False else None
-    if field == "consent":
-        yn = yes_no(e)
-        return None if yn is None else ("given" if yn else "declined")
-    if field == "confirm":
-        yn = yes_no(e)
-        return None if yn is None else ("yes" if yn else "no")
-    return e or None
-
-
-# ── Endpoints ────────────────────────────────────────────────────────────────
-class PromptIn(BaseModel):
-    key: str
-    language: str
-    # Read-back text for the "confirm" prompt, in the patient's language or digits.
-    value: str | None = Field(default=None, max_length=300)
-
-
-@router.post("/prompt")
-async def prompt(body: PromptIn, _user: str = Depends(current_user)) -> dict:
-    """The question as text (patient's language + English) and spoken WAV (base64)."""
-    if body.key not in PROMPTS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown question")
-    code = languages.TTS.get(body.language)
-    if not code:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No voice for this language")
-    english = PROMPTS[body.key]
+    `key` must be in PROMPTS and `tts_code` is the Sarvam TTS code for `language`
+    (both checked by the endpoint).
+    """
+    english = PROMPTS[key]
     s = get_settings()
     try:
-        if body.key == "confirm":
+        if key == "confirm":
             # Translate the frame with a placeholder, then insert the patient's own words
             # untouched, so the read-back repeats exactly what was heard.
-            frame = await to_language(english.replace("{value}", "XYZ"), body.language)
-            text = frame.replace("XYZ", body.value or "") if "XYZ" in frame else f"{body.value}. {frame}"
-            english = english.replace("{value}", body.value or "")
+            frame = await to_language(english.replace("{value}", "XYZ"), language)
+            text = frame.replace("XYZ", value or "") if "XYZ" in frame else f"{value}. {frame}"
+            english = english.replace("{value}", value or "")
         else:
-            cache_key = (body.key, body.language)
+            cache_key = (key, language)
             if cache_key not in _prompt_cache:
-                _prompt_cache[cache_key] = await to_language(english, body.language)
+                _prompt_cache[cache_key] = await to_language(english, language)
             text = _prompt_cache[cache_key]
             if cache_key in _audio_cache:
                 return {"text": text, "english": english, "audio": _audio_cache[cache_key]}
         r = await _sarvam().text_to_speech.convert(
-            text=text, language_code=code, model=s.tts_model, speaker=s.tts_speaker, pace=1.1, speech_sample_rate=22050
+            text=text, language_code=tts_code, model=s.tts_model, speaker=s.tts_speaker, pace=1.1, speech_sample_rate=22050
         )
     except ApiError as exc:
         raise _upstream(exc) from None
     if not r.audios:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Speech service returned no audio")
-    if body.key != "confirm":
-        _audio_cache[(body.key, body.language)] = r.audios[0]
+    if key != "confirm":
+        _audio_cache[(key, language)] = r.audios[0]
     return {"text": text, "english": english, "audio": r.audios[0]}
 
 
-class ParseIn(BaseModel):
-    field: str
-    language: str
-    text: str = Field(min_length=1, max_length=1000)
-
-
-@router.post("/parse")
-async def parse_answer(body: ParseIn, _user: str = Depends(current_user)) -> dict:
-    """Turns the patient's spoken answer into a form value."""
-    if body.field not in PROMPTS or body.language not in languages.TRANSLATE:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Bad request")
+async def interpret_answer(*, field: str, language: str, text: str) -> dict:
+    """`field` must be in PROMPTS and `language` in languages.TRANSLATE (checked by the endpoint)."""
     s = get_settings()
     if s.bedrock_model and s.aws_region:
-        result = await claude_parse(body.field, body.language, body.text)
+        result = await claude_parse(field, language, text)
         if result is not None:
             return result
     # Fallback: Sarvam translation + rules, with the usual read-backs.
     try:
-        english = await to_english(body.text, body.language)
+        english = await to_english(text, language)
         value: object
-        if body.field == "name":
+        if field == "name":
             # Names stay as spoken, written in English letters for the records.
-            name = body.text.strip()
-            if body.language != "en" and not re.search(r"[A-Za-z]", name):
+            name = text.strip()
+            if language != "en" and not re.search(r"[A-Za-z]", name):
                 try:
                     r = await _sarvam().text.transliterate(
-                        input=name, source_language_code=languages.TRANSLATE[body.language], target_language_code="en-IN"
+                        input=name, source_language_code=languages.TRANSLATE[language], target_language_code="en-IN"
                     )
                     name = r.transliterated_text
                 except ApiError:
@@ -251,10 +136,10 @@ async def parse_answer(body: ParseIn, _user: str = Depends(current_user)) -> dic
             name = re.sub(r"^(my name is|i am|this is|name)\s+", "", name.strip(" .,"), flags=re.I)
             value = " ".join(w[:1].upper() + w[1:] for w in name.split()) or None
         else:
-            value = parse(body.field, body.text, english)
+            value = parse(field, text, english)
     except ApiError as exc:
         raise _upstream(exc) from None
-    return {"value": value, "english": english, "confirm": body.field in CONFIRM_FIELDS}
+    return {"value": value, "english": english, "confirm": field in CONFIRM_FIELDS}
 
 
 # ── Claude reads the answer ──────────────────────────────────────────────────
@@ -301,41 +186,11 @@ PARSE_TOOL = {
 }
 
 
-def normalise(field: str, status_: str, value: str) -> str | list[str] | None:
-    """Validates Claude's value for the field. "" / [] = explicit none, None = not usable."""
-    if status_ == "unclear":
-        return None
-    if status_ == "none":
-        if field == "conditions":
-            return []
-        return "" if field in ("phone", "allergies", "medicines") else None
-    v = value.strip()
-    if field == "age":
-        return v if v.isdigit() and 0 <= int(v) <= 120 else None
-    if field == "sex":
-        return v.upper() if v.upper() in ("F", "M", "O") else None
-    if field == "phone":
-        digits = re.sub(r"\D", "", v)[-10:]
-        return digits if re.fullmatch(r"[6-9]\d{9}", digits) else None
-    if field == "conditions":
-        keys = [c.strip().lower() for c in v.split(",")]
-        keys = ["hypertension" if k in ("bp", "blood pressure") else k for k in keys]
-        found = [k for k in CONDITION_WORDS if k in keys]
-        return found or None
-    yes_no_map = {"given": "yes", "yes": "yes", "declined": "no", "no": "no"}
-    answer = yes_no_map.get(v.lower())
-    if field == "consent":
-        return None if answer is None else ("given" if answer == "yes" else "declined")
-    if field == "confirm":
-        return answer
-    return v[:200] or None
-
-
 async def claude_parse(field: str, language: str, text: str) -> dict | None:
     """One fast Claude call: correct, translate and extract. None if Claude is unavailable."""
     from anthropic import APIConnectionError, APIStatusError
 
-    from .assistant import bedrock
+    from app.core.bedrock import bedrock
 
     try:
         r = await bedrock().messages.create(
