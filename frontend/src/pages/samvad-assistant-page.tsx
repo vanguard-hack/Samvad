@@ -5,15 +5,14 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import { Button } from "@/components/ui/button"
-import { SAMPLE_DOCTORS } from "@/data/appointments"
+import type { SampleDoctor } from "@/data/appointments"
 import { setAppointmentStatus, useAppointments } from "@/data/appointments-store"
-import { SAMPLE_PATIENTS } from "@/data/sample"
+import { createAgentEngine } from "@/features/assistant/agent-engine"
 import { claimShortcut } from "@/features/assistant/assistant-bus"
 import { AssistantContext, type AssistantContextValue } from "@/features/assistant/assistant-context"
 import { ChatComposer, type ComposerHandle } from "@/features/assistant/chat-composer"
 import { AssistantMessage, ErrorMessage, ThinkingMessage, UserMessage } from "@/features/assistant/chat-message"
 import { EmptyState } from "@/features/assistant/empty-state"
-import { createLocalEngine } from "@/features/assistant/local-engine"
 import type { ScheduleData, Suggestion } from "@/features/assistant/types"
 import { useAssistantChat } from "@/features/assistant/use-assistant-chat"
 import { useMessageText } from "@/features/assistant/use-message-text"
@@ -24,15 +23,22 @@ import { openCalendar } from "@/features/consultations/calendar-focus"
 const FINE_POINTER = typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
 
 export function SamvadAssistantPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { text } = useMessageText()
   const reduced = useReducedMotion()
 
-  // Shared with the Consultations calendar (sample data held in memory).
+  // Shared with the Consultations calendar; answers add the appointments they show.
   const appointments = useAppointments()
-  const data = useMemo<ScheduleData>(() => ({ appointments, patients: SAMPLE_PATIENTS, doctors: SAMPLE_DOCTORS }), [appointments])
-  // A status changed in the dialog is in every later answer.
-  const engine = useMemo(() => createLocalEngine(() => data), [data])
+  const data = useMemo<ScheduleData>(() => {
+    // Doctors as booked on the appointments (answer cards read them from here).
+    const doctors = new Map<string, SampleDoctor>()
+    for (const a of appointments) if (a.doctor) doctors.set(a.doctor.id, a.doctor)
+    return { appointments, patients: [], doctors: [...doctors.values()] }
+  }, [appointments])
+  // Answers come from the Samvad agent on the backend, in the interface language.
+  const language = useRef(i18n.language)
+  language.current = i18n.language
+  const engine = useMemo(() => createAgentEngine(() => language.current), [])
   const chat = useAssistantChat(engine)
   // Four starters keep the welcome screen on one page without scrolling.
   const starters = useMemo(() => engine.starters().slice(0, 4), [engine])

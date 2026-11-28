@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { calendarDigest } from "@/data/appointments-store"
+import { calendarDigest, loadMonth } from "@/data/appointments-store"
 import { openCalendar } from "@/features/consultations/calendar-focus"
 import { emitPageAction, runClaimedShortcut, type AssistantAction } from "./assistant-bus"
 import { ConversationRecorder } from "./conversations-api"
@@ -233,6 +233,7 @@ export function FloatingAssistant() {
           const page = document.getElementById("main")?.innerText ?? ""
           let out: Reply
           try {
+            await loadMonth(new Date()) // at least this month's calendar, even before Consultations was opened
             const res = await api("/assistant", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -242,7 +243,7 @@ export function FloatingAssistant() {
                 path: pathRef.current,
                 page_text: page.replace(/\s+\n/g, "\n").slice(0, 5000),
                 history: history.current,
-                // The appointments live in the browser, so Claude reads the calendar from here.
+                // The loaded appointments (synced from the backend), so Claude reads the calendar from here.
                 calendar: calendarDigest(),
               }),
               signal: request.signal,

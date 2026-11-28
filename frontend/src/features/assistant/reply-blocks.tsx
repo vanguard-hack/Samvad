@@ -108,8 +108,9 @@ function AppointmentList({ ids }: { ids: string[] }) {
     <motion.div {...enter} className="overflow-hidden rounded-xl border bg-card shadow-xs">
       <ul className="divide-y">
         {shown.map((a, i) => {
-          const patient = data.patients.find((p) => p.id === a.patientId)
-          const doctor = data.doctors.find((d) => d.id === a.doctorId)
+          // The appointment carries its patient and doctor as booked.
+          const patient = a.patient ?? data.patients.find((p) => p.id === a.patientId)
+          const doctor = a.doctor ?? data.doctors.find((d) => d.id === a.doctorId)
           return (
             <motion.li
               key={a.id}

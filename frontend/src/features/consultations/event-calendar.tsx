@@ -29,6 +29,8 @@ type Props = {
   onOpen: (appointment: SampleAppointment) => void
   /** Show this appointment (or day), e.g. when an assistant sent the doctor here. */
   focus?: CalendarFocus | null
+  /** Called with each day whose month comes into view (main view or mini calendar), to load it. */
+  onMonthShown?: (day: Date) => void
 }
 
 /**
@@ -37,7 +39,7 @@ type Props = {
  * month with booking dots, department filters, up next) beside a calendar with
  * Month, Week, Day and Agenda views. Read-only: doctors don't book here.
  */
-export function EventCalendar({ appointments, onOpen, focus = null }: Props) {
+export function EventCalendar({ appointments, onOpen, focus = null, onMonthShown }: Props) {
   const { t, i18n } = useTranslation()
   const now = useNow()
   // Phones start on the agenda: a month grid has no room for names there.
@@ -57,6 +59,15 @@ export function EventCalendar({ appointments, onOpen, focus = null }: Props) {
   const [miniShift, setMiniShift] = useState({ anchor: anchor.getTime(), months: 0 })
   const shift = miniShift.anchor === anchor.getTime() ? miniShift.months : 0
   const miniMonth = new Date(anchor.getFullYear(), anchor.getMonth() + shift, 1)
+
+  // Load what comes into view: the anchor's month, both ends of its week, and the mini calendar's month.
+  const weekStart = weekDays(anchor)[0].getTime()
+  const weekEnd = weekDays(anchor).at(-1)!.getTime()
+  const miniTime = miniMonth.getTime()
+  useEffect(() => {
+    if (!onMonthShown) return
+    for (const time of [anchor.getTime(), weekStart, weekEnd, miniTime]) onMonthShown(new Date(time))
+  }, [anchor, weekStart, weekEnd, miniTime, onMonthShown])
 
   const shown = useMemo(() => appointments.filter((a) => visible.has(appointmentMeta(a).department)), [appointments, visible])
   const hours = useMemo(() => visibleHours(appointments), [appointments])
