@@ -97,7 +97,7 @@ export function FloatingAssistant() {
   const bounds = useRef<HTMLDivElement>(null)
   const dragged = useRef(false)
 
-  const { play, stop: stopPlayback } = playback
+  const { play, stop: stopPlayback, unlock } = playback
 
   const stop = useCallback(() => {
     abortRef.current?.abort()
@@ -135,6 +135,7 @@ export function FloatingAssistant() {
 
   const start = useCallback(async () => {
     stop()
+    unlock() // inside the key press, so the spoken replies are allowed to play
     const ctrl = new AbortController()
     abortRef.current = ctrl
     const { signal } = ctrl
@@ -255,21 +256,25 @@ export function FloatingAssistant() {
       mic?.getTracks().forEach((tr) => tr.stop())
       setStream(null)
     }
-  }, [perform, play, stop, stopPlayback, t])
+  }, [perform, play, stop, stopPlayback, t, unlock])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isShortcut(e)) {
         e.preventDefault()
-        if (on) stop()
-        else if (runClaimedShortcut()) return // e.g. the New patient form's voice questions
+        e.stopPropagation()
+        if (on) {
+          stop()
+          runClaimedShortcut() // with the New patient form open, hand straight over to its questions
+        } else if (runClaimedShortcut()) return // e.g. the New patient form's voice questions
         else void start() // from the key press, so the browser allows the microphone
       } else if (on && e.key === "Escape") {
         stop()
       }
     }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    // Capture phase: a focused control (e.g. the language Select) can't swallow Ctrl+Space.
+    window.addEventListener("keydown", onKey, true)
+    return () => window.removeEventListener("keydown", onKey, true)
   }, [on, start, stop])
 
   // The interpreter page has its own microphone; don't hold two at once.

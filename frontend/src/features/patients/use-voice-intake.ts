@@ -28,6 +28,8 @@ export type IntakeTurn = {
   text: string
   english?: string
   audio: Blob
+  /** When the turn happened (ms since epoch), for the conversation history. */
+  at: number
 }
 
 export type IntakePhase = "idle" | "starting" | "speaking" | "listening" | "thinking" | "done" | "error"
@@ -82,7 +84,7 @@ export function useVoiceIntake(callbacks: Callbacks) {
   const micLevel = useMicLevel(phase === "listening" ? stream : null)
   const level = useTransform([micLevel, playback.level], ([a, b]: number[]) => Math.max(a, b))
 
-  const { play, stop: stopPlayback } = playback
+  const { play, stop: stopPlayback, unlock } = playback
 
   const stop = useCallback(() => {
     abortRef.current?.abort()
@@ -99,6 +101,7 @@ export function useVoiceIntake(callbacks: Callbacks) {
   const start = useCallback(
     async (language: string, fields: readonly IntakeField[] = INTAKE_FIELDS.map((f) => f.key)) => {
       stop()
+      unlock() // still inside the Ctrl+Space press: lets the questions be heard
       const ctrl = new AbortController()
       abortRef.current = ctrl
       const { signal } = ctrl
@@ -138,18 +141,38 @@ export function useVoiceIntake(callbacks: Callbacks) {
         setQuestion({ text: p.text, english: p.english })
         setPhase("speaking")
         const audio = b64ToBlob(p.audio)
-        turns.current.push({ role: "samvad", field: key === "confirm" ? `${field}.confirm` : field || key, text: p.text, english: p.english, audio })
+        turns.current.push({
+          role: "samvad",
+          field: key === "confirm" ? `${field}.confirm` : field || key,
+          text: p.text,
+          english: p.english,
+          audio,
+          at: Date.now(),
+        })
         await play(audio)
         check()
       }
-      const hear = async (mic: MediaStream, turnField: string) => {
+      // The microphone is open ONLY while listening. Holding it open while Samvad
+      // speaks silences the question on many Windows setups (Bluetooth headsets
+      // drop to hands-free mode; communications ducking turns other sound down).
+      const hear = async (turnField: string) => {
         setPartial("")
         setPhase("listening")
-        const heard = await listenOnce({ stream: mic, language, signal, onPartial: setPartial })
-        check()
-        setPartial(heard?.text ?? "")
-        if (heard) turns.current.push({ role: "patient", field: turnField, text: heard.text, audio: heard.audio })
-        return heard?.text ?? null
+        const mic = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        })
+        try {
+          check()
+          setStream(mic)
+          const heard = await listenOnce({ stream: mic, language, signal, onPartial: setPartial })
+          check()
+          setPartial(heard?.text ?? "")
+          if (heard) turns.current.push({ role: "patient", field: turnField, text: heard.text, audio: heard.audio, at: Date.now() })
+          return heard?.text ?? null
+        } finally {
+          mic.getTracks().forEach((t) => t.stop())
+          setStream(null)
+        }
       }
       const parse = async (field: string, text: string) => {
         setPhase("thinking")
@@ -160,18 +183,14 @@ export function useVoiceIntake(callbacks: Callbacks) {
           signal,
         })
         check()
-        return (await res.json()) as Parsed
+        const parsed = (await res.json()) as Parsed
+        // Keep the English beside the patient's own words (Critical Rule 6).
+        const last = turns.current.at(-1)
+        if (last?.role === "patient" && parsed.english) last.english = parsed.english
+        return parsed
       }
 
-      let mic: MediaStream | null = null
       try {
-        // Echo cancellation on, so Samvad's own voice isn't transcribed as the answer.
-        mic = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        })
-        check()
-        setStream(mic)
-
         fields.forEach((key) => void fetchPrompt(key).catch(() => {})) // warm every question up front
         void fetchPrompt("retry").catch(() => {})
         for (const key of fields) {
@@ -181,14 +200,14 @@ export function useVoiceIntake(callbacks: Callbacks) {
           let done = false
           for (let attempt = 0; attempt < MAX_TRIES && !done; attempt++) {
             await say(attempt === 0 ? key : "retry")
-            const heard = await hear(mic, key)
+            const heard = await hear(key)
             if (!heard) continue
             const parsed = await parse(key, heard)
             if (parsed.value === null) continue
             const isEmpty = parsed.value === "" || (Array.isArray(parsed.value) && parsed.value.length === 0)
             if (parsed.confirm && !isEmpty) {
               await say("confirm", readBack(key, parsed.value, heard))
-              const answer = await hear(mic, `${key}.confirm`)
+              const answer = await hear(`${key}.confirm`)
               if (!answer) continue
               const yes = await parse("confirm", answer)
               if (yes.value !== "yes") continue
@@ -209,12 +228,10 @@ export function useVoiceIntake(callbacks: Callbacks) {
         setError((err as Error).message || "error")
         setPhase("error")
       } finally {
-        mic?.getTracks().forEach((t) => t.stop())
-        setStream(null)
         if (abortRef.current === ctrl) abortRef.current = null
       }
     },
-    [play, stop],
+    [play, stop, unlock],
   )
 
   useEffect(() => () => abortRef.current?.abort(), [])

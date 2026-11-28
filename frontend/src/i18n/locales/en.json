@@ -410,8 +410,8 @@
     "end": "End conversation"
   },
   "conversations": {
-    "title": "Assistant conversations",
-    "subtitle": "Every voice-assistant session, as a chat. A session runs from Ctrl+Space until you close the assistant.",
+    "title": "Conversations",
+    "subtitle": "Every voice conversation as a chat: assistant sessions (Ctrl+Space until closed) and New patient voice intakes.",
     "loadError": "Couldn’t load conversations.",
     "empty": "No conversations yet. Press Ctrl+Space to talk to the assistant.",
     "sessions": "Sessions",
@@ -421,6 +421,9 @@
     "messages_other": "{{count}} messages",
     "live": "Live",
     "you": "You",
-    "interrupted": "interrupted"
+    "interrupted": "interrupted",
+    "intake": "Patient intake",
+    "patient": "Patient",
+    "openPatient": "Open patient"
   }
 }

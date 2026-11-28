@@ -300,7 +300,10 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
               )}
             </>
           ) : intake.phase === "error" ? (
-            <p className="text-destructive">{t("newPatient.voice.error")}</p>
+            <>
+              <p className="text-destructive">{t("newPatient.voice.error")}</p>
+              {intake.error && <p className="mt-0.5 text-xs text-muted-foreground">{intake.error}</p>}
+            </>
           ) : (
             <>
               <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t(`newPatient.voice.phase.${intake.phase}`)}</p>

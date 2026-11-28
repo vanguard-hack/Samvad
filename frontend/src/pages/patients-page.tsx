@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { saveIntakeConversation } from "@/features/assistant/conversations-api"
 import { useQueueColumns } from "@/features/patients/columns"
 import { NewPatientDialog, type NewPatientInput } from "@/features/patients/new-patient-dialog"
 import {
@@ -130,6 +131,15 @@ export function PatientsPage() {
         if (byAssistant) await markSavedByAssistant(row)
       } catch {
         /* recording / audit mark optional */
+      }
+      // The voice intake also goes into the Conversations history, as a chat.
+      if (recording.length) {
+        const log = row.intake_log ?? []
+        void saveIntakeConversation(
+          row,
+          row.language,
+          recording.map((turn, i) => ({ ...turn, audio_path: log[i]?.audio_path ?? null })),
+        ).catch(() => {})
       }
       setPatients((list) => [row, ...list])
       setTab("needs_action")

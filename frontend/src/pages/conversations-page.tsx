@@ -1,6 +1,7 @@
 import { Loader2, MessagesSquare, UserRound } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router"
 
 import { LogoMark } from "@/components/brand/logo"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +13,13 @@ import {
   type AssistantMessage,
   type AssistantSession,
 } from "@/features/assistant/conversations-api"
+import { intakeAudioUrls } from "@/features/patients/patients-api"
 import { getLanguage } from "@/i18n/languages"
 import { cn } from "@/lib/utils"
 
 /**
- * Every voice-assistant session as a chat: sessions on the left (newest first),
+ * Every voice conversation as a chat: assistant sessions and New patient voice
+ * intakes (saved with the patient, only when they consented). Shown: sessions on the left (newest first),
  * the selected conversation on the right. A session runs from opening the
  * assistant (Ctrl+Space) to closing it. Updates live while a session is going.
  */
@@ -29,6 +32,8 @@ export function ConversationsPage() {
   const [loading, setLoading] = useState(true)
   const [loadingChat, setLoadingChat] = useState(false)
   const [error, setError] = useState(false)
+  // Short-lived links for intake audio clips (private bucket).
+  const [audioUrls, setAudioUrls] = useState<Record<string, string>>({})
   const bottom = useRef<HTMLDivElement>(null)
 
   const loadSessions = useCallback(async () => {
@@ -77,6 +82,15 @@ export function ConversationsPage() {
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" })
+    const paths = messages.map((m) => m.audio_path).filter((p): p is string => !!p)
+    if (!paths.length) return setAudioUrls({})
+    let live = true
+    intakeAudioUrls(paths)
+      .then((urls) => live && setAudioUrls(urls))
+      .catch(() => live && setAudioUrls({}))
+    return () => {
+      live = false
+    }
   }, [messages])
 
   const when = (iso: string) =>
@@ -125,7 +139,14 @@ export function ConversationsPage() {
                   s.id === selected ? "bg-muted" : "hover:bg-muted/60",
                 )}
               >
-                <span className="line-clamp-1 text-xs font-medium">{s.title || t("conversations.untitled")}</span>
+                <span className="flex w-full items-center gap-1.5">
+                  <span className="line-clamp-1 text-xs font-medium">{s.title || t("conversations.untitled")}</span>
+                  {s.kind === "intake" && (
+                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">
+                      {t("conversations.intake")}
+                    </Badge>
+                  )}
+                </span>
                 <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   {when(s.started_at)} · {t("conversations.messages", { count: s.message_count })}
                   {!s.ended_at && (
@@ -142,7 +163,19 @@ export function ConversationsPage() {
           <section aria-label={t("conversations.chat")} className="flex min-h-0 flex-col rounded-lg border bg-background">
             {current && (
               <header className="border-b px-4 py-2.5">
-                <p className="line-clamp-1 text-sm font-medium">{current.title || t("conversations.untitled")}</p>
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <span className="line-clamp-1">{current.title || t("conversations.untitled")}</span>
+                  {current.kind === "intake" && (
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                      {t("conversations.intake")}
+                    </Badge>
+                  )}
+                  {current.kind === "intake" && current.patient_id && (
+                    <Button variant="link" size="xs" className="ms-auto h-auto p-0" render={<Link to={`/patients/${current.patient_id}`} />}>
+                      {t("conversations.openPatient")}
+                    </Button>
+                  )}
+                </p>
                 <p className="text-[11px] text-muted-foreground">
                   {when(current.started_at)}
                   {current.ended_at ? ` – ${time(current.ended_at)}` : ` · ${t("conversations.live")}`}
@@ -155,6 +188,8 @@ export function ConversationsPage() {
               ) : (
                 messages.map((m) => {
                   const mine = m.role === "user"
+                  const intake = current?.kind === "intake"
+                  const url = m.audio_path ? audioUrls[m.audio_path] : undefined
                   const l = m.language ? getLanguage(m.language) : null
                   return (
                     <div key={m.id} className={cn("flex items-end gap-2", mine && "flex-row-reverse")}>
@@ -178,8 +213,14 @@ export function ConversationsPage() {
                         >
                           {m.text}
                         </div>
+                        {m.english && (
+                          <p lang="en" className="max-w-full text-xs text-muted-foreground">
+                            {m.english}
+                          </p>
+                        )}
+                        {url && <audio controls preload="none" src={url} className="h-7 w-48" aria-label={t("patientDetail.play")} />}
                         <span className="text-[10px] text-muted-foreground">
-                          {mine ? t("conversations.you") : "Samvad"} · {time(m.created_at)}
+                          {mine ? (intake ? t("conversations.patient") : t("conversations.you")) : "Samvad"} · {time(m.created_at)}
                           {l && l.code !== "en" ? ` · ${l.englishName}` : ""}
                           {m.interrupted ? ` · ${t("conversations.interrupted")}` : ""}
                         </span>
