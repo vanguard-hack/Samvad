@@ -489,7 +489,11 @@
       "placeholder": "अपॉइंटमेंट के बारे में पूछें, जैसे “Who needs review today?”",
       "hint": "भेजने के लिए Enter · नई पंक्ति के लिए Shift+Enter",
       "send": "भेजें",
-      "stop": "रोकें"
+      "stop": "रोकें",
+      "voice": "बोलकर लिखें (Ctrl+Space)",
+      "voiceStop": "सुनना बंद करें",
+      "voiceError": "माइक्रोफ़ोन इस्तेमाल नहीं हो सका। अनुमति जाँचें और फिर कोशिश करें।",
+      "listening": "सुन रहा है…"
     },
     "when": {
       "today": "आज",

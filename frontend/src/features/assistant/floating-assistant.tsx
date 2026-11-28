@@ -280,6 +280,11 @@ export function FloatingAssistant() {
   // The interpreter page has its own microphone; don't hold two at once.
   useEffect(() => {
     if (on && pathname === "/interpreter") stop()
+    // The Samvad Assistant chat takes over voice: keep talking there, as chat text.
+    if (on && pathname === "/samvad-assistant") {
+      stop()
+      window.setTimeout(() => runClaimedShortcut(), 0) // after the page has claimed Ctrl+Space
+    }
   }, [on, pathname, stop])
 
   useEffect(() => () => abortRef.current?.abort(), [])

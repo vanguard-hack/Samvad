@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { SAMPLE_APPOINTMENTS, SAMPLE_DOCTORS, type AppointmentStatus } from "@/data/appointments"
 import { SAMPLE_PATIENTS } from "@/data/sample"
+import { claimShortcut } from "@/features/assistant/assistant-bus"
 import { AssistantContext, type AssistantContextValue } from "@/features/assistant/assistant-context"
 import { ChatComposer, type ComposerHandle } from "@/features/assistant/chat-composer"
 import { AssistantMessage, ErrorMessage, ThinkingMessage, UserMessage } from "@/features/assistant/chat-message"
@@ -47,6 +48,9 @@ export function SamvadAssistantPage() {
     },
     [send, text],
   )
+
+  // Ctrl+Space on this page dictates into the prompt bar instead of opening the floating assistant.
+  useEffect(() => claimShortcut(() => composer.current?.toggleVoice()), [])
 
   const value = useMemo<AssistantContextValue>(
     () => ({ data, openAppointment: setOpenId, ask: send, pending: chat.pending }),
@@ -119,8 +123,13 @@ export function SamvadAssistantPage() {
 
         <div className="px-4 pt-1 pb-3">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-1">
-            <ChatComposer ref={composer} onSend={send} onStop={chat.stop} pending={chat.pending} autoFocus={FINE_POINTER} />
-            <p className="text-center text-[10px] text-muted-foreground">{t("assistant.disclaimer")}</p>
+            <ChatComposer
+              ref={composer}
+              onSend={send}
+              onStop={chat.stop}
+              pending={chat.pending}
+              autoFocus={FINE_POINTER}
+            />
           </div>
         </div>
       </div>

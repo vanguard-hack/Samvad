@@ -489,7 +489,11 @@
       "placeholder": "Ask about appointments, e.g. “Who needs review today?”",
       "hint": "Enter to send · Shift+Enter for a new line",
       "send": "Send",
-      "stop": "Stop"
+      "stop": "Stop",
+      "voice": "Dictate (Ctrl+Space)",
+      "voiceStop": "Stop listening",
+      "voiceError": "Couldn’t use the microphone. Check permission and try again.",
+      "listening": "Listening…"
     },
     "when": {
       "today": "today",
