@@ -30,3 +30,17 @@ def test_lists_and_yes_no():
     assert parse("confirm", "", "yes that is correct") == "yes"
     assert yes_no("maybe") is None
     assert parse_number("sixty two") == 62
+
+
+def test_claude_value_normalising():
+    from app.intake import normalise
+
+    assert normalise("consent", "ok", "yes") == "given"
+    assert normalise("consent", "ok", "declined") == "declined"
+    assert normalise("age", "ok", "45") == "45" and normalise("age", "ok", "200") is None
+    assert normalise("phone", "ok", "+91 98765 43210") == "9876543210"
+    assert normalise("phone", "none", "") == ""
+    assert normalise("conditions", "ok", "diabetes, BP") == ["diabetes", "hypertension"]
+    assert normalise("conditions", "none", "") == []
+    assert normalise("medicines", "ok", "Dolo 650") == "Dolo 650"
+    assert normalise("name", "unclear", "") is None

@@ -3,3 +3,6 @@ uvicorn[standard]==0.54.0
 httpx==0.29.0
 sarvamai==0.1.50
 python-multipart==0.0.34
+# Kept below 2.0: Bedrock accepts the 2.x SDK's API version only for Claude 4.7+, and the
+# assistant runs Claude Sonnet 4.6 there.
+anthropic[bedrock]==1.17.0

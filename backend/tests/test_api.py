@@ -34,3 +34,7 @@ def test_language_maps():
 def test_intake_needs_sign_in():
     assert client.post("/api/intake/prompt", json={"key": "name", "language": "hi"}).status_code == 401
     assert client.post("/api/intake/parse", json={"field": "age", "language": "hi", "text": "45"}).status_code == 401
+
+
+def test_assistant_needs_sign_in():
+    assert client.post("/api/assistant", json={"text": "hello"}).status_code == 401

@@ -69,7 +69,8 @@
     },
     "breadcrumb": "Breadcrumb",
     "interpreter": "Interpreter",
-    "profile": "Profile"
+    "profile": "Profile",
+    "conversations": "Conversations"
   },
   "topbar": {
     "search": "Search patients, IDs…"
@@ -231,12 +232,6 @@
       "special": "At least 1 special character"
     }
   },
-  "dictation": {
-    "listening": "Dictation on, listening",
-    "stop": "Click, press Esc or Ctrl+Space to stop",
-    "unavailable": "Dictation unavailable, try again",
-    "clear": "Clear text"
-  },
   "newPatient": {
     "title": "New patient",
     "description": "Add a patient in four short steps.",
@@ -258,7 +253,7 @@
     "optional": "(optional)",
     "language": "Preferred language",
     "languagePlaceholder": "Choose a language",
-    "languageHint": "Samvad asks the patient each question aloud in this language and fills in the answers.",
+    "languageHint": "Then press Ctrl+Space: Samvad asks the patient each question aloud in this language and fills in the answers.",
     "noVoice": "Voice interpretation isn’t available in {{language}}. The visit will use picture mode, and a human interpreter should be arranged.",
     "pictureMode": "Picture mode + human interpreter",
     "communication": "Communication",
@@ -293,15 +288,15 @@
       "sexRequired": "Choose one.",
       "phoneInvalid": "Enter a 10-digit Indian mobile number.",
       "languageRequired": "Choose the patient’s language.",
-      "consentRequired": "Record the patient’s answer before adding."
+      "consentRequired": "Record the patient’s answer before adding.",
+      "languageFirst": "Choose the patient’s language first, then press Ctrl+Space.",
+      "noVoiceLanguage": "Samvad can’t speak this language, so voice questions aren’t available. Fill the form by hand."
     },
     "voice": {
       "patientSaid": "Patient said: “{{text}}”",
       "done": "All questions asked. Check the details, then add the patient.",
       "missed": "Not captured, please fill in: {{fields}}",
       "error": "Voice questions stopped. Fill the form by hand or try again.",
-      "stop": "Stop voice",
-      "again": "Ask again",
       "phase": {
         "starting": "Starting voice…",
         "speaking": "Samvad is asking",
@@ -317,7 +312,8 @@
         "conditions": "conditions",
         "medicines": "medicines",
         "consent": "consent"
-      }
+      },
+      "stopHint": "Press Ctrl+Space to stop"
     },
     "savedNote": "Saved to your patient records.",
     "addedUnsaved": "{{name}} added for this session.",
@@ -388,7 +384,8 @@
       "voice_intake": "Voice intake",
       "triaged": "Triage updated",
       "status_changed": "Status changed",
-      "visit": "Visit"
+      "visit": "Visit",
+      "assistant": "Saved by voice assistant"
     },
     "sort": {
       "urgency": "Urgency",
@@ -396,5 +393,34 @@
       "lastEvent": "Last event",
       "name": "Name"
     }
+  },
+  "assistant": {
+    "error": "The assistant isn’t available right now. Try again.",
+    "close": "Close",
+    "stop": "Click, press Esc or Ctrl+Space to stop",
+    "phase": {
+      "idle": "Assistant",
+      "listening": "Listening…",
+      "thinking": "Thinking…",
+      "speaking": "Samvad",
+      "error": "Assistant"
+    },
+    "menu": "Assistant options",
+    "viewConversations": "View conversations",
+    "end": "End conversation"
+  },
+  "conversations": {
+    "title": "Assistant conversations",
+    "subtitle": "Every voice-assistant session, as a chat. A session runs from Ctrl+Space until you close the assistant.",
+    "loadError": "Couldn’t load conversations.",
+    "empty": "No conversations yet. Press Ctrl+Space to talk to the assistant.",
+    "sessions": "Sessions",
+    "chat": "Conversation",
+    "untitled": "Conversation",
+    "messages_one": "{{count}} message",
+    "messages_other": "{{count}} messages",
+    "live": "Live",
+    "you": "You",
+    "interrupted": "interrupted"
   }
 }

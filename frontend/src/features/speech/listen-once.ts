@@ -12,7 +12,8 @@ type ListenOptions = {
   onPartial?: (text: string) => void
 }
 
-export type Heard = { text: string; audio: Blob }
+/** `language` is Sarvam's detected code (e.g. "hi-IN") when listening with "auto". */
+export type Heard = { text: string; audio: Blob; language: string | null }
 
 /**
  * Listens for ONE utterance through the live speech-to-text socket and
@@ -23,6 +24,7 @@ export type Heard = { text: string; audio: Blob }
 export async function listenOnce({ stream, language, timeoutMs = 15000, signal, onPartial }: ListenOptions): Promise<Heard | null> {
   const token = await accessToken()
   const chunks: ArrayBuffer[] = []
+  let detected: string | null = null
   return new Promise<Heard | null>((resolve, reject) => {
     let stopCapture: (() => void) | null = null
     let settled = false
@@ -43,7 +45,7 @@ export async function listenOnce({ stream, language, timeoutMs = 15000, signal, 
         socket.close()
       }
       if (error) reject(error)
-      else resolve(text ? { text, audio: pcmToWav(chunks) } : null)
+      else resolve(text ? { text, audio: pcmToWav(chunks), language: detected } : null)
     }
     const onAbort = () => finish(null, new DOMException("Aborted", "AbortError"))
     signal?.addEventListener("abort", onAbort)
@@ -52,7 +54,7 @@ export async function listenOnce({ stream, language, timeoutMs = 15000, signal, 
     socket.onopen = () => socket.send(JSON.stringify({ type: "start", token, language, mode: "codemix" }))
     socket.onmessage = async (e) => {
       if (typeof e.data !== "string") return
-      const msg = JSON.parse(e.data) as { type: string; text?: string; message?: string }
+      const msg = JSON.parse(e.data) as { type: string; text?: string; message?: string; language?: string | null }
       if (msg.type === "ready") {
         try {
           stopCapture = await startPcmCapture(stream, (pcm) => {
@@ -67,6 +69,7 @@ export async function listenOnce({ stream, language, timeoutMs = 15000, signal, 
       } else if (msg.type === "partial") {
         onPartial?.(msg.text ?? "")
       } else if (msg.type === "final" && msg.text?.trim()) {
+        detected = msg.language ?? null
         finish(msg.text.trim())
       } else if (msg.type === "error") {
         finish(null, new Error(msg.message ?? "Speech service error"))

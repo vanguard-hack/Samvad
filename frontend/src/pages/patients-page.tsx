@@ -19,6 +19,7 @@ import {
   createPatient,
   eventFor,
   listPatients,
+  markSavedByAssistant,
   patientCode,
   QUEUE_STATUSES,
   saveIntakeRecording,
@@ -27,6 +28,7 @@ import {
   type QueuePatch,
   type QueueStatus,
 } from "@/features/patients/patients-api"
+import { onPageAction } from "@/features/assistant/assistant-bus"
 import { QueueDetailsDialog } from "@/features/patients/queue-details-dialog"
 import { byDue, byLastEvent, byUrgency, PRIORITY_OPTIONS } from "@/features/patients/queue-meta"
 import { addSessionPatient, isSessionPatient, listSessionPatients, updateSessionPatient } from "@/features/patients/session-patients"
@@ -50,6 +52,8 @@ export function PatientsPage() {
   const [updateError, setUpdateError] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<PatientRow | null>(null)
+  // Language for a registration the voice assistant started (auto voice + auto save).
+  const [autoLanguage, setAutoLanguage] = useState<string | null>(null)
 
   const [tab, setTab] = useState<QueueStatus>("needs_action")
   const [query, setQuery] = useState("")
@@ -73,6 +77,24 @@ export function PatientsPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Actions from the Ctrl+Space voice assistant.
+  useEffect(
+    () =>
+      onPageAction((action) => {
+        if (action.type === "refresh") void load()
+        else if (action.type === "start_registration") {
+          setAutoLanguage(action.language)
+          setAdding(true)
+        } else if (action.type === "show_queue") {
+          if (action.status && (QUEUE_STATUSES as readonly string[]).includes(action.status)) setTab(action.status as QueueStatus)
+          if (action.priority) setPriority(action.priority)
+          if (action.clinic) setClinic(action.clinic === "all" ? "all" : action.clinic)
+          if (action.search !== undefined) setQuery(action.search)
+        }
+      }),
+    [load],
+  )
 
   const replace = (row: PatientRow) => setPatients((list) => list.map((p) => (p.id === row.id ? row : p)))
 
@@ -100,13 +122,14 @@ export function PatientsPage() {
   })
 
   /** Consent given → saved to Supabase. Declined → memory only, never stored (Critical Rule 3). */
-  const onCreate = async ({ consent, recording, ...p }: NewPatientInput): Promise<string | null> => {
+  const onCreate = async ({ consent, recording, byAssistant, ...p }: NewPatientInput): Promise<string | null> => {
     if (consent === "given") {
       const row = await createPatient(p)
       try {
         await saveIntakeRecording(row, recording) // the patient is kept even if audio upload fails
+        if (byAssistant) await markSavedByAssistant(row)
       } catch {
-        /* recording optional */
+        /* recording / audit mark optional */
       }
       setPatients((list) => [row, ...list])
       setTab("needs_action")
@@ -255,7 +278,16 @@ export function PatientsPage() {
         <DataTable columns={columns} data={rows} pageSize="auto" />
       </div>
 
-      <NewPatientDialog open={adding} onOpenChange={setAdding} onCreate={onCreate} />
+      <NewPatientDialog
+        key={autoLanguage ?? "manual"}
+        open={adding}
+        onOpenChange={(o) => {
+          setAdding(o)
+          if (!o) setAutoLanguage(null)
+        }}
+        onCreate={onCreate}
+        autoLanguage={autoLanguage}
+      />
       <QueueDetailsDialog patient={editing} clinics={clinics} onOpenChange={(o) => !o && setEditing(null)} onSave={save} />
     </div>
   )
