@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.languages import STT_REST, TTS, stt_rest_code, stt_stream_code
+from app.core.languages import STT_REST, TTS, stt_rest_code, stt_stream_code
 from app.main import app
 
 client = TestClient(app)

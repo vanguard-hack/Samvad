@@ -8,7 +8,7 @@ from pathlib import Path
 
 def _load_dotenv() -> None:
     """Minimal .env loader for local development; real env vars always win."""
-    path = Path(__file__).resolve().parent.parent / ".env"
+    path = Path(__file__).resolve().parents[2] / ".env"  # backend/.env
     if not path.is_file():
         return
     for line in path.read_text(encoding="utf-8").splitlines():

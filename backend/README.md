@@ -28,6 +28,29 @@ forwards `/api` (including the WebSocket) to port 8000.
 
 Tests: `.venv/Scripts/python -m pytest -q`
 
+## Code layout
+
+Follows the `fastapi-templates` skill (`.agents/skills/fastapi-templates`):
+
+```
+app/
+├── main.py                 # FastAPI app, CORS, mounts api_router
+├── api/
+│   ├── router.py           # every endpoint router under /api
+│   ├── dependencies.py     # current_user (Supabase bearer token)
+│   └── endpoints/          # health, stt (+ WS stream), tts, translate, intake
+├── core/
+│   ├── config.py           # Settings from env / backend/.env
+│   ├── security.py         # Supabase Auth token check (cached 60 s)
+│   ├── sarvam.py           # Sarvam client + safe upstream error mapping
+│   └── languages.py        # Samvad → Sarvam language codes
+├── schemas/                # Pydantic request bodies
+├── services/               # speech, live stream relay, voice intake (+ pure parser)
+├── models/                 # reserved: the API owns no tables yet
+└── repositories/           # reserved: no direct database access yet
+tests/
+```
+
 ## Production
 
 The root `Dockerfile` runs this API and Caddy in one container; Caddy serves

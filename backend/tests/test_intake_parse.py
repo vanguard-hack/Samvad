@@ -1,4 +1,4 @@
-from app.intake import parse, parse_number, yes_no
+from app.services.intake_parser import parse, parse_number, yes_no
 
 
 def test_age():
