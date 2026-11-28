@@ -6,7 +6,7 @@ import { Link, useParams } from "react-router"
 import { LogoMark } from "@/components/brand/logo"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PATIENT_STATUS_BADGE } from "@/features/patients/columns"
+import { clockLabel, eventWhen, PRIORITY_STYLE, STATUS_STYLE } from "@/features/patients/queue-meta"
 import { getPatient, intakeAudioUrls, maskPhone, patientCode, type PatientRow } from "@/features/patients/patients-api"
 import { getSessionPatient } from "@/features/patients/session-patients"
 import { INTAKE_FIELDS } from "@/features/patients/use-voice-intake"
@@ -71,7 +71,6 @@ export function PatientDetailPage() {
   }
 
   const lang = getLanguage(patient.language)
-  const status = PATIENT_STATUS_BADGE[patient.status]
   const unsaved = patient.consent === "declined"
   const none = t("newPatient.noneRecorded")
   const words = INTAKE_FIELDS.filter((f) => patient.patient_words?.[f.key])
@@ -92,8 +91,11 @@ export function PatientDetailPage() {
             {patientCode(patient.patient_number)}
           </Badge>
         )}
-        <Badge variant={status.variant} className={status.className}>
-          {t(`patients.status.${patient.status}`)}
+        <Badge variant="outline" className={STATUS_STYLE[patient.queue_status]}>
+          {t(`queue.status.${patient.queue_status}`)}
+        </Badge>
+        <Badge variant="outline" className={PRIORITY_STYLE[patient.priority ?? "none"]}>
+          {t(`queue.priority.${patient.priority ?? "none"}`)}
         </Badge>
       </div>
       {unsaved && <p className="text-xs text-caution">{t("newPatient.unsavedNote")}</p>}
@@ -145,6 +147,12 @@ export function PatientDetailPage() {
         </Section>
 
         <Section title={t("patientDetail.record")}>
+          <Row label={t("queue.col.reason")}>{patient.reason ?? none}</Row>
+          <Row label={t("queue.clinic")}>{patient.clinic ?? none}</Row>
+          <Row label={t("queue.col.due")}>{patient.due_at ? clockLabel(patient.due_at, i18n.language) : none}</Row>
+          <Row label={t("queue.col.lastEvent")}>
+            {t(`queue.event.${patient.last_event}`)} · {eventWhen(patient.last_event_at, i18n.language)}
+          </Row>
           <Row label={t("newPatient.consent")}>{t(`newPatient.consentOption.${patient.consent}`)}</Row>
           <Row label={t("patientDetail.registered")}>{date(patient.created_at)}</Row>
           <Row label={t("patients.col.lastVisit")}>{date(patient.last_visit)}</Row>

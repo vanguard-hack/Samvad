@@ -1,8 +1,15 @@
-import { type PatientStatus, type SamplePatient, type Sex } from "@/data/sample"
+import { type Sex } from "@/data/sample"
 import { supabase } from "@/lib/supabase"
 import { type IntakeTurn } from "./use-voice-intake"
 
-/** A row of public.patients (see supabase/migrations/*_create_patients.sql). */
+export const QUEUE_STATUSES = ["needs_action", "in_progress", "waiting", "completed"] as const
+export type QueueStatus = (typeof QUEUE_STATUSES)[number]
+export const PRIORITIES = ["high", "medium", "low"] as const
+/** Set by the doctor, never by AI. null = not triaged yet. */
+export type Priority = (typeof PRIORITIES)[number]
+export type LastEvent = "registered" | "voice_intake" | "triaged" | "status_changed" | "visit"
+
+/** A row of public.patients (see supabase/migrations/). */
 export interface PatientRow {
   id: string
   patient_number: number
@@ -19,7 +26,13 @@ export interface PatientRow {
   consent: "given" | "declined"
   patient_words: Record<string, string>
   intake_log: IntakeLogEntry[]
-  status: PatientStatus
+  clinic: string | null
+  reason: string | null
+  priority: Priority | null
+  queue_status: QueueStatus
+  last_event: LastEvent
+  last_event_at: string
+  due_at: string | null
   visits: number
   last_visit: string
   created_at: string
@@ -42,8 +55,11 @@ export type NewPatient = Pick<
   "full_name" | "age" | "sex" | "phone" | "language" | "can_read" | "companion" | "allergies" | "conditions" | "medicines" | "patient_words"
 >
 
+/** Fields the doctor edits from the queue (status, triage). */
+export type QueuePatch = Partial<Pick<PatientRow, "clinic" | "reason" | "priority" | "queue_status" | "due_at">>
+
 const COLUMNS =
-  "id, patient_number, full_name, age, sex, phone, language, can_read, companion, allergies, conditions, medicines, consent, patient_words, intake_log, status, visits, last_visit, created_at"
+  "id, patient_number, full_name, age, sex, phone, language, can_read, companion, allergies, conditions, medicines, consent, patient_words, intake_log, clinic, reason, priority, queue_status, last_event, last_event_at, due_at, visits, last_visit, created_at"
 
 export const patientCode = (n: number) => `SMV-${n}`
 
@@ -53,20 +69,9 @@ export function maskPhone(phone: string | null | undefined) {
   return digits ? `+91 ••••• ••${digits.slice(-3)}` : "—"
 }
 
-/** Shape used by the patients table. `ref` is the route id (the row uuid). */
-export function toTableRow(p: PatientRow): SamplePatient {
-  return {
-    id: patientCode(p.patient_number),
-    ref: p.id,
-    name: p.full_name,
-    age: p.age,
-    sex: p.sex,
-    phone: maskPhone(p.phone),
-    language: p.language,
-    lastVisit: p.last_visit,
-    visits: p.visits,
-    status: p.status,
-  }
+/** Which event a queue edit records. */
+export function eventFor(patch: QueuePatch): LastEvent {
+  return "queue_status" in patch && Object.keys(patch).length === 1 ? "status_changed" : "triaged"
 }
 
 function client() {
@@ -84,6 +89,18 @@ export async function getPatient(id: string): Promise<PatientRow | null> {
   const { data, error } = await client().from("patients").select(COLUMNS).eq("id", id).maybeSingle()
   if (error) throw error
   return data as PatientRow | null
+}
+
+/** Updates queue fields and records the change as the patient's last event. */
+export async function updatePatientQueue(id: string, patch: QueuePatch): Promise<PatientRow> {
+  const { data, error } = await client()
+    .from("patients")
+    .update({ ...patch, last_event: eventFor(patch), last_event_at: new Date().toISOString() })
+    .eq("id", id)
+    .select(COLUMNS)
+    .single()
+  if (error) throw error
+  return data as PatientRow
 }
 
 /** Saves a consented patient. Called only after the doctor presses "Add patient" (Critical Rule 1). */
@@ -120,8 +137,13 @@ export async function saveIntakeRecording(patient: PatientRow, turns: IntakeTurn
       return { seq, role: turn.role, field: turn.field, text: turn.text, english: turn.english, audio_path: error ? null : path }
     }),
   )
-  const { error } = await db.from("patients").update({ intake_log: log }).eq("id", patient.id)
+  const { error } = await db
+    .from("patients")
+    .update({ intake_log: log, last_event: "voice_intake", last_event_at: new Date().toISOString() })
+    .eq("id", patient.id)
   if (error) throw error
+  patient.intake_log = log
+  patient.last_event = "voice_intake"
   return failed
 }
 
