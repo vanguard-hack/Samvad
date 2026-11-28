@@ -1,8 +1,9 @@
 // "New patient" wizard, after shadcn.io's stepper-dialog-wizard block (a Dialog
 // with a numbered step line, one panel per step, Back + one primary action).
 // That block's code is Pro-only, so this is rebuilt from its description.
-import { AlertTriangle, CheckIcon, Loader2, Mic, Square } from "lucide-react"
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { AlertTriangle, CheckIcon, Loader2 } from "lucide-react"
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type Sex } from "@/data/sample"
+import { claimShortcut } from "@/features/assistant/assistant-bus"
 import { LiveOrb } from "@/features/interpreter/live-orb"
 import { getLanguage, LANGUAGES } from "@/i18n/languages"
 import { cn } from "@/lib/utils"
@@ -79,16 +81,22 @@ function validate(step: Step, d: Draft): Errors {
   return e
 }
 
-export type NewPatientInput = NewPatient & { consent: Consent; recording: IntakeTurn[] }
+export type NewPatientInput = NewPatient & { consent: Consent; recording: IntakeTurn[]; byAssistant: boolean }
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** Saves (consent given) or keeps in memory (declined); resolves with the patient code, or null if unsaved. */
   onCreate: (patient: NewPatientInput) => Promise<string | null>
+  /**
+   * Set when the voice assistant opened the form: voice questions start at once
+   * in this language and the patient is saved when they finish (the user's
+   * Critical Rule 1 override for the assistant).
+   */
+  autoLanguage?: string | null
 }
 
-export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
+export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = null }: Props) {
   const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [reached, setReached] = useState(0)
@@ -132,6 +140,8 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
   const reset = () => {
     intake.stop()
     intake.clearRecording()
+    autoStarted.current = false
+    autoSaved.current = false
     setHeard({})
     setMissed([])
     setStep(0)
@@ -158,6 +168,10 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
     setErrors(e)
     if (Object.keys(e).length) return
     if (current !== "review") return goTo(step + 1)
+    await save()
+  }
+
+  const save = async () => {
     if (saving) return
     setSaving(true)
     setSaveError(false)
@@ -177,6 +191,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
         patient_words: heard as Record<string, string>,
         consent: draft.consent as Consent,
         recording: intake.recording(),
+        byAssistant: !!autoLanguage,
       })
       setCreated(code ?? "")
     } catch {
@@ -215,56 +230,101 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
     void intake.start(code)
   }
 
-  const voicePanel = intake.phase !== "idle" && created === null && (
-    <div className="flex flex-col items-center gap-2 rounded-lg border bg-muted/40 px-4 pt-4 pb-2.5 text-center" aria-live="polite">
-      {/* Same live orb as the interpreter: swirls, breathes, and swells with whoever is speaking. */}
-      <LiveOrb level={intake.level} className="size-24" />
-      <div className="flex min-h-12 w-full flex-col items-center gap-0.5 text-sm">
-        {intake.phase === "done" ? (
-          <>
-            <p className="font-medium">{t("newPatient.voice.done")}</p>
-            {missed.length > 0 && (
-              <p className="text-xs text-caution">
-                {t("newPatient.voice.missed", { fields: missed.map((f) => t(`newPatient.voice.field.${f}`)).join(", ") })}
-              </p>
-            )}
-          </>
-        ) : intake.phase === "error" ? (
-          <p className="text-destructive">{t("newPatient.voice.error")}</p>
-        ) : (
-          <>
-            <p className="text-xs font-medium text-muted-foreground">{t(`newPatient.voice.phase.${intake.phase}`)}</p>
-            {intake.question && (
-              <p className="line-clamp-2" lang={draft.language} dir={lang?.dir}>
-                {intake.question.text}
-              </p>
-            )}
-            {intake.question && draft.language !== "en" && (
-              <p className="line-clamp-1 text-xs text-muted-foreground">{intake.question.english}</p>
-            )}
-            {intake.partial && (
-              <p className="line-clamp-1 text-xs text-primary" lang={draft.language}>
-                “{intake.partial}”
-              </p>
-            )}
-          </>
-        )}
-      </div>
-      {intake.active ? (
-        <Button type="button" variant="outline" size="xs" onClick={intake.stop}>
-          <Square />
-          {t("newPatient.voice.stop")}
-        </Button>
-      ) : (
-        lang?.voice && (
-          <Button type="button" variant="outline" size="xs" onClick={() => startVoice(draft.language)}>
-            <Mic />
-            {t("newPatient.voice.again")}
-          </Button>
-        )
-      )}
-    </div>
-  )
+  // Opened by the voice assistant: choose the language and start the questions at once.
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (!open || !autoLanguage || autoStarted.current) return
+    autoStarted.current = true
+    setDraft((d) => ({ ...d, language: autoLanguage }))
+    startVoice(autoLanguage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per opening
+  }, [open, autoLanguage])
+
+  // ...and save automatically when every question is answered. If something is
+  // missing or invalid, stop on that step so the doctor can finish it.
+  const autoSaved = useRef(false)
+  useEffect(() => {
+    if (!autoLanguage || intake.phase !== "done" || created !== null || autoSaved.current) return
+    autoSaved.current = true
+    const detailErrors = validate("details", draft)
+    if (!draft.language) return goTo(0)
+    if (Object.keys(detailErrors).length) {
+      setStep(1)
+      setErrors(detailErrors)
+      return
+    }
+    setStep(3)
+    if (!draft.consent) return setErrors({ consent: "consentRequired" })
+    void save()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the questions finish
+  }, [intake.phase, autoLanguage, created])
+
+  // Ctrl+Space while this form is open starts (or stops) the voice questions,
+  // instead of opening the general assistant. Voice never starts on its own.
+  const toggleVoice = useRef<() => void>(() => {})
+  const toggle = () => {
+    if (created !== null) return
+    if (intake.active) return intake.stop()
+    if (!draft.language) {
+      goTo(0)
+      return setErrors({ language: "languageFirst" })
+    }
+    if (!getLanguage(draft.language).voice) {
+      goTo(0)
+      return setErrors({ language: "noVoiceLanguage" })
+    }
+    startVoice(draft.language)
+  }
+  useEffect(() => {
+    toggleVoice.current = toggle // always the latest form state
+  })
+  useEffect(() => {
+    if (!open) return
+    return claimShortcut(() => toggleVoice.current())
+  }, [open])
+
+  // Floating orb in the corner (outside the form) while the questions run.
+  const showOrb = open && created === null && intake.phase !== "idle"
+  const voiceOrb =
+    showOrb &&
+    createPortal(
+      <div className="pointer-events-none fixed end-9 bottom-9 z-[60] flex flex-col items-end gap-2" aria-live="polite">
+        <div className="w-72 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg">
+          {intake.phase === "done" ? (
+            <>
+              <p className="font-medium">{t("newPatient.voice.done")}</p>
+              {missed.length > 0 && (
+                <p className="mt-0.5 text-xs text-caution">
+                  {t("newPatient.voice.missed", { fields: missed.map((f) => t(`newPatient.voice.field.${f}`)).join(", ") })}
+                </p>
+              )}
+            </>
+          ) : intake.phase === "error" ? (
+            <p className="text-destructive">{t("newPatient.voice.error")}</p>
+          ) : (
+            <>
+              <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t(`newPatient.voice.phase.${intake.phase}`)}</p>
+              {intake.question && (
+                <p lang={draft.language} dir={lang?.dir}>
+                  {intake.question.text}
+                </p>
+              )}
+              {intake.question && draft.language !== "en" && (
+                <p className="text-xs text-muted-foreground">{intake.question.english}</p>
+              )}
+              {intake.partial && (
+                <p className="mt-0.5 text-xs text-primary" lang={draft.language}>
+                  “{intake.partial}”
+                </p>
+              )}
+              <p className="mt-1.5 text-[10px] text-muted-foreground">{t("newPatient.voice.stopHint")}</p>
+            </>
+          )}
+        </div>
+        {intake.phase !== "done" && intake.phase !== "error" && <LiveOrb level={intake.level} className="size-20 drop-shadow-lg" />}
+      </div>,
+      document.body,
+    )
 
   const primaryLabel = created !== null
     ? t("newPatient.done")
@@ -274,7 +334,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto pb-0 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("newPatient.title")}</DialogTitle>
           <DialogDescription>{t("newPatient.description")}</DialogDescription>
@@ -326,7 +386,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
           })}
         </ol>
 
-        {voicePanel}
+        {voiceOrb}
 
         <form
           noValidate
@@ -424,12 +484,8 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
                 <Select
                   value={draft.language || null}
                   onValueChange={(v) => {
-                    const code = (v as string) ?? ""
-                    set("language", code)
-                    // A voice language starts the spoken questions at once (from this click,
-                    // so the browser allows the microphone). Others are typed by the doctor.
-                    if (code && getLanguage(code).voice) startVoice(code)
-                    else intake.stop()
+                    set("language", (v as string) ?? "")
+                    intake.stop() // a new language means asking again (with Ctrl+Space)
                   }}
                   items={LANGUAGES.map((l) => ({ value: l.code, label: l.englishName }))}
                 >
@@ -557,7 +613,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate }: Props) {
             </div>
           )}
 
-          <DialogFooter className="mt-3">
+          <DialogFooter className="mt-3 mb-0">
             {created === null && (
               <Button type="button" variant="outline" size="sm" onClick={() => (step === 0 ? close(false) : goTo(step - 1))}>
                 {step === 0 ? t("common.cancel") : t("newPatient.back")}

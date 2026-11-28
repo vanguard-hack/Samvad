@@ -1,5 +1,6 @@
 import {
   AudioLinesIcon,
+  BotMessageSquareIcon,
   ClipboardCheckIcon,
   FileTextIcon,
   HeadsetIcon,
@@ -34,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "patients", to: "/", icon: UsersIcon },
       { key: "interpreter", to: "/interpreter", icon: AudioLinesIcon },
+      { key: "conversations", to: "/conversations", icon: BotMessageSquareIcon },
       { key: "consultations", to: "/consultations", icon: MessagesSquareIcon },
       { key: "assistant", to: "/samvad-assistant", icon: DoctorIcon },
     ],

@@ -7,7 +7,7 @@ export type QueueStatus = (typeof QUEUE_STATUSES)[number]
 export const PRIORITIES = ["high", "medium", "low"] as const
 /** Set by the doctor, never by AI. null = not triaged yet. */
 export type Priority = (typeof PRIORITIES)[number]
-export type LastEvent = "registered" | "voice_intake" | "triaged" | "status_changed" | "visit"
+export type LastEvent = "registered" | "voice_intake" | "triaged" | "status_changed" | "visit" | "assistant"
 
 /** A row of public.patients (see supabase/migrations/). */
 export interface PatientRow {
@@ -101,6 +101,15 @@ export async function updatePatientQueue(id: string, patch: QueuePatch): Promise
     .single()
   if (error) throw error
   return data as PatientRow
+}
+
+/** Marks a record as saved by the voice assistant (audit trail for the Rule 1 override). */
+export async function markSavedByAssistant(patient: PatientRow): Promise<void> {
+  const at = new Date().toISOString()
+  const { error } = await client().from("patients").update({ last_event: "assistant", last_event_at: at }).eq("id", patient.id)
+  if (error) throw error
+  patient.last_event = "assistant"
+  patient.last_event_at = at
 }
 
 /** Saves a consented patient. Called only after the doctor presses "Add patient" (Critical Rule 1). */

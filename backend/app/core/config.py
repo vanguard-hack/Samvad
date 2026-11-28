@@ -33,6 +33,10 @@ class Settings:
     stt_model: str = "saaras:v4"
     # Pay-as-you-go allows 20 concurrent streaming sockets per account; stay under it.
     max_streams: int = 15
+    # Voice assistant (Claude on Amazon Bedrock). Credentials come from the standard
+    # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY variables, read by boto3.
+    bedrock_model: str = ""
+    aws_region: str = ""
 
 
 @lru_cache
@@ -46,4 +50,7 @@ def get_settings() -> Settings:
         supabase_publishable_key=env("SUPABASE_PUBLISHABLE_KEY") or env("VITE_SUPABASE_PUBLISHABLE_KEY", ""),
         cors_origins=tuple(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip()),
         tts_speaker=env("SARVAM_TTS_SPEAKER", "ishita"),
+        # Accept LiteLLM-style ids ("bedrock/eu.anthropic...") as well as plain Bedrock ids.
+        bedrock_model=env("BEDROCK_MODEL_ID", "").removeprefix("bedrock/"),
+        aws_region=env("AWS_REGION") or env("AWS_REGION_NAME") or env("AWS_DEFAULT_REGION", ""),
     )

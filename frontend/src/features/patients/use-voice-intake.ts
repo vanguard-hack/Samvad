@@ -35,7 +35,8 @@ export type IntakePhase = "idle" | "starting" | "speaking" | "listening" | "thin
 type Prompt = { text: string; english: string; audio: string }
 type Parsed = { value: IntakeValue | null; english: string; confirm: boolean }
 
-const MAX_TRIES = 3
+/** Ask at most twice: a third attempt costs more time than typing the field. */
+const MAX_TRIES = 2
 
 function b64ToBlob(b64: string, type = "audio/wav") {
   const bin = atob(b64)
@@ -109,15 +110,30 @@ export function useVoiceIntake(callbacks: Callbacks) {
       const check = () => {
         if (signal.aborted) throw new DOMException("Aborted", "AbortError")
       }
+      // Fixed questions are fetched ahead (the next one loads while the patient answers).
+      const fetched = new Map<string, Promise<Prompt>>()
+      const fetchPrompt = (key: string, value?: string) => {
+        const load = async () => {
+          const res = await api("/intake/prompt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key, language, value }),
+            signal,
+          })
+          return (await res.json()) as Prompt
+        }
+        if (value !== undefined) return load() // read-backs are never reused
+        if (!fetched.has(key)) {
+          const p = load()
+          p.catch(() => fetched.delete(key)) // retry on next use
+          fetched.set(key, p)
+        }
+        return fetched.get(key)!
+      }
+
       const say = async (key: string, value?: string) => {
         setPhase("thinking")
-        const res = await api("/intake/prompt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key, language, value }),
-          signal,
-        })
-        const p = (await res.json()) as Prompt
+        const p = await fetchPrompt(key, value)
         check()
         setQuestion({ text: p.text, english: p.english })
         setPhase("speaking")
@@ -156,6 +172,8 @@ export function useVoiceIntake(callbacks: Callbacks) {
         check()
         setStream(mic)
 
+        fields.forEach((key) => void fetchPrompt(key).catch(() => {})) // warm every question up front
+        void fetchPrompt("retry").catch(() => {})
         for (const key of fields) {
           const step = INTAKE_FIELDS.find((f) => f.key === key)?.step ?? 1
           cb.current.onStep(step)

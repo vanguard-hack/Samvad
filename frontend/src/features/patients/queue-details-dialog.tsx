@@ -31,7 +31,7 @@ type Props = {
 export function QueueDetailsDialog({ patient, clinics, onOpenChange, onSave }: Props) {
   return (
     <Dialog open={patient !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto pb-0 sm:max-w-md">
         {/* Keyed so the form starts from the chosen patient's values each time. */}
         {patient && <DetailsForm key={patient.id} patient={patient} clinics={clinics} onOpenChange={onOpenChange} onSave={onSave} />}
       </DialogContent>
@@ -142,7 +142,7 @@ function DetailsForm({ patient, clinics, onOpenChange, onSave }: Props & { patie
           </div>
         </FieldGroup>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="mt-4 mb-0">
           {error && <p className="me-auto self-center text-xs text-destructive">{t("newPatient.saveError")}</p>}
           <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
