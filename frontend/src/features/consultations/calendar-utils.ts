@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { findDoctor, type Department, type SampleAppointment } from "@/data/appointments"
-import { findPatient } from "@/data/sample"
+import type { Department, SampleAppointment } from "@/data/appointments"
 import { formatClock, intlLocale } from "@/lib/format"
 
 export type CalendarView = "month" | "week" | "day" | "agenda"
@@ -168,9 +167,9 @@ export function timezoneOffset(lang: string) {
 // ── Appointments ─────────────────────────────────────────────────────────────
 
 export function appointmentMeta(a: SampleAppointment) {
-  const doctor = findDoctor(a.doctorId)
+  const doctor = a.doctor
   const department: Department = doctor?.department ?? "generalMedicine"
-  return { patient: findPatient(a.patientId)?.name ?? a.patientId, doctor, department }
+  return { patient: a.patient?.name ?? a.patientId, doctor, department }
 }
 
 export function appointmentStart(a: SampleAppointment) {

@@ -58,8 +58,17 @@ class GoogleCalendar:
     async def insert_event(self, event: dict[str, Any]) -> dict[str, Any]:
         return await self._request("POST", self.events_url, json=event)
 
+    async def get_event(self, event_id: str) -> dict[str, Any]:
+        return await self._request("GET", self._event_url(event_id))
+
+    async def patch_event(self, event_id: str, changes: dict[str, Any]) -> dict[str, Any]:
+        return await self._request("PATCH", self._event_url(event_id), json=changes)
+
     async def delete_event(self, event_id: str) -> None:
-        await self._request("DELETE", f"{self.events_url}/{quote(event_id, safe='')}")
+        await self._request("DELETE", self._event_url(event_id))
+
+    def _event_url(self, event_id: str) -> str:
+        return f"{self.events_url}/{quote(event_id, safe='')}"
 
     async def list_events(self, time_min: datetime, time_max: datetime, private_property: str) -> list[dict[str, Any]]:
         """Single events overlapping [time_min, time_max), filtered by one private extended property."""

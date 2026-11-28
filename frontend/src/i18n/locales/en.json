@@ -169,7 +169,11 @@
       "more": "+{{count}} more",
       "empty": "No consultations in these days.",
       "timezone": "Your timezone",
-      "visit": "Visit {{n}}"
+      "visit": "Visit {{n}}",
+      "loading": "Syncing consultations…",
+      "loadError": "Couldn't load consultations: {{message}}",
+      "retry": "Try again",
+      "statusError": "Couldn't save the status: {{message}}"
     }
   },
   "section": {

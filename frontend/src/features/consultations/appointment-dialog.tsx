@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { APPOINTMENT_STATUSES, findDoctor, type AppointmentStatus, type SampleAppointment } from "@/data/appointments"
-import { findPatient } from "@/data/sample"
+import { APPOINTMENT_STATUSES, type AppointmentStatus, type SampleAppointment } from "@/data/appointments"
 import { AppointmentStatusBadge } from "@/features/consultations/columns"
 import { formatShortDate, formatTimeSlot } from "@/lib/format"
 
@@ -26,8 +25,8 @@ export function AppointmentDialog({ appointment, onOpenChange, onStatusChange }:
     if (!open) setReportRequested(false)
   }
 
-  const patient = appointment ? findPatient(appointment.patientId) : undefined
-  const doctor = appointment ? findDoctor(appointment.doctorId) : undefined
+  const patient = appointment?.patient
+  const doctor = appointment?.doctor
 
   return (
     <Dialog open={appointment !== null} onOpenChange={close}>

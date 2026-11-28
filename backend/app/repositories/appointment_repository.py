@@ -50,6 +50,31 @@ def to_synced_row(a: Appointment, synced_at: dt.datetime) -> dict[str, Any]:
     }
 
 
+def from_row(row: dict[str, Any]) -> Appointment:
+    return Appointment.model_validate(
+        {
+            "id": row["appointment_id"],
+            "patient": {
+                "id": row["patient_number"],
+                "name": row["patient_name"],
+                "age": row.get("patient_age"),
+                "sex": row.get("patient_sex"),
+                "phone": row.get("patient_phone"),
+            },
+            "doctor": {"id": row["doctor_code"], "name": row["doctor_name"], "department": row["department"]},
+            "date": row["appointment_date"],
+            "start": row["start_time"],
+            "end": row["end_time"],
+            "language": row["language"],
+            "visit": row["visit"],
+            "status": row["status"],
+            "notes": row.get("notes"),
+            "calendar_event_id": row.get("calendar_event_id"),
+            "calendar_link": row.get("calendar_link"),
+        }
+    )
+
+
 class AppointmentRepository:
     def __init__(self, token: str, http: httpx.AsyncClient = _http):
         s = get_settings()
@@ -63,6 +88,11 @@ class AppointmentRepository:
             "POST", params={"select": "appointment_id"}, json=to_row(a), prefer="return=representation"
         )
         return rows[0]["appointment_id"]
+
+    async def get(self, appointment_id: str) -> dict[str, Any] | None:
+        """The doctor's row for an appointment id, or None (RLS hides other doctors' rows)."""
+        rows = await self._request("GET", params={"appointment_id": f"eq.{appointment_id}", "select": "*"}, prefer="return=representation")
+        return rows[0] if rows else None
 
     async def update(self, appointment_id: str, values: dict[str, Any]) -> None:
         await self._request("PATCH", params={"appointment_id": f"eq.{appointment_id}"}, json=values, prefer="return=minimal")

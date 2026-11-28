@@ -1,17 +1,24 @@
 """Appointments: Google Calendar events, mirrored in Supabase.
 
 create:  claim an APT-#### id in Supabase -> create the calendar event -> store the event id.
+status:  change the status in the calendar event's description and in Supabase.
 fetch:   list the doctor's Samvad events in a date range -> upsert them into Supabase -> return them.
 """
 
 import datetime as dt
 import logging
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from app.core.google_calendar import GoogleCalendar
-from app.repositories.appointment_repository import AppointmentRepository, to_synced_row
-from app.schemas.appointments import Appointment, AppointmentCreate, FetchAppointmentsIn, FetchAppointmentsOut
+from app.repositories.appointment_repository import AppointmentRepository, from_row, to_synced_row
+from app.schemas.appointments import (
+    Appointment,
+    AppointmentCreate,
+    AppointmentStatus,
+    FetchAppointmentsIn,
+    FetchAppointmentsOut,
+)
 from app.services import appointment_event
 
 log = logging.getLogger("samvad.appointments")
@@ -41,6 +48,30 @@ async def create_appointment(
     except HTTPException as exc:
         # The event exists and the row exists; the next fetch-appointments sync links them.
         log.warning("Event created but not linked to %s: %s", appointment_id, exc.detail)
+    return appointment
+
+
+async def update_status(
+    appointment_id: str, new_status: AppointmentStatus, *, calendar: GoogleCalendar, repo: AppointmentRepository
+) -> Appointment:
+    row = await repo.get(appointment_id)
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Appointment not found")
+
+    appointment = from_row(row)
+    if appointment.calendar_event_id:
+        # The calendar holds the latest details (it may have been edited there); keep them.
+        event = await calendar.get_event(appointment.calendar_event_id)
+        appointment = appointment_event.from_event(event, calendar.timezone) or appointment
+        appointment = appointment.model_copy(update={"status": new_status})
+        await calendar.patch_event(
+            appointment.calendar_event_id,
+            {"summary": appointment_event.event_title(appointment), "description": appointment_event.event_description(appointment)},
+        )
+    else:
+        appointment = appointment.model_copy(update={"status": new_status})
+
+    await repo.update(appointment_id, {"status": new_status, "synced_at": _now().isoformat()})
     return appointment
 
 

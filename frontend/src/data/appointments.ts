@@ -25,6 +25,21 @@ export interface SampleAppointment {
   language: string // LANGUAGES code the consultation is held in
   visit: number // the patient's nth visit
   status: AppointmentStatus
+  // From the backend (/api/fetch-appointments): the details booked with the appointment.
+  patient?: AppointmentPatient
+  doctor?: SampleDoctor
+  notes?: string | null
+  meetingLink?: string | null
+  calendarLink?: string | null
+}
+
+/** The patient as booked on an appointment (the backend's appointment record). */
+export interface AppointmentPatient {
+  id: string
+  name: string
+  age?: number | null
+  sex?: 'F' | 'M' | 'O' | null
+  phone?: string | null
 }
 
 export const SAMPLE_DOCTORS: SampleDoctor[] = [

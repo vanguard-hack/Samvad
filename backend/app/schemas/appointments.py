@@ -96,6 +96,12 @@ class Appointment(AppointmentDetails):
         return self.doctor.id
 
 
+class AppointmentStatusIn(CamelModel):
+    """PATCH /api/appointments/{id} body."""
+
+    status: AppointmentStatus
+
+
 class FetchAppointmentsIn(CamelModel):
     """POST /api/fetch-appointments body: an inclusive date range in the clinic's time zone."""
 

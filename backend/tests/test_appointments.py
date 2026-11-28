@@ -408,3 +408,53 @@ def test_meeting_link_must_be_https(fakes):
     assert client.post("/api/appointments", json={**BODY, "meetingLink": "http://zoom.us/j/1"}).status_code == 422
     assert client.post("/api/appointments", json=BODY).status_code == 201
     assert "location" not in fakes.calendar.inserted[0]
+
+
+# ---- status update ----
+
+ROW = {
+    "appointment_id": "APT-2021", "patient_number": "SMV-1001", "patient_name": "Lakshmi Narayan", "patient_age": 58,
+    "patient_sex": "F", "patient_phone": None, "doctor_code": "DOC-03", "doctor_name": "Dr. Farah Siddiqui",
+    "department": "endocrinology", "appointment_date": "2026-12-01", "start_time": "09:00:00", "end_time": "09:30:00",
+    "language": "kn", "visit": 7, "status": "scheduled", "notes": None, "calendar_event_id": "evt123", "calendar_link": None,
+}
+
+
+def test_status_update_patches_the_event_and_the_row(fakes):
+    event = sample_event(sample_appointment(meeting_link="https://meet.google.com/abc-defg-hij"))
+    patched: list[tuple[str, dict]] = []
+
+    async def get(self, appointment_id):
+        return dict(ROW) if appointment_id == "APT-2021" else None
+
+    async def get_event(event_id):
+        return event
+
+    async def patch_event(event_id, changes):
+        patched.append((event_id, changes))
+        return {**event, **changes}
+
+    fakes.repo.rows["APT-2021"] = {}
+    fakes.repo.get = get.__get__(fakes.repo)
+    fakes.calendar.get_event, fakes.calendar.patch_event = get_event, patch_event
+
+    r = client.patch("/api/appointments/APT-2021", json={"status": "followUp"})
+
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "followUp" and r.json()["meetingLink"] == "https://meet.google.com/abc-defg-hij"
+    assert patched[0][0] == "evt123" and "Status: followUp" in patched[0][1]["description"]
+    assert "Meeting link: https://meet.google.com/abc-defg-hij" in patched[0][1]["description"]
+    assert fakes.repo.rows["APT-2021"]["status"] == "followUp"
+
+    assert client.patch("/api/appointments/APT-9999", json={"status": "closed"}).status_code == 404
+    assert client.patch("/api/appointments/APT-2021", json={"status": "cancelled"}).status_code == 422
+    assert client.patch("/api/appointments/nope", json={"status": "closed"}).status_code == 422
+
+
+def test_status_update_needs_sign_in():
+    assert client.patch("/api/appointments/APT-2021", json={"status": "closed"}).status_code == 401
+
+
+def test_row_maps_back_to_an_appointment():
+    a = repository_module.from_row(ROW)
+    assert (a.id, a.patient.name, a.doctor.department, a.start.strftime("%H:%M")) == ("APT-2021", "Lakshmi Narayan", "endocrinology", "09:00")
