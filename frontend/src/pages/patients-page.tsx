@@ -156,16 +156,16 @@ export function PatientsPage() {
   const filtered = priority !== "all" || clinic !== "all" || query !== ""
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 p-5">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="flex items-center gap-2 text-lg font-semibold">
+          <h1 className="flex items-center gap-2 text-base font-semibold">
             {t("queue.title")}
-            <Badge className="bg-danger text-white tabular-nums">
+            <Badge className="h-4.5 bg-danger px-1.5 text-[11px] text-white tabular-nums">
               {loading ? <Loader2 className="animate-spin" /> : counts.needs_action}
             </Badge>
           </h1>
-          <p className="text-sm text-muted-foreground">{t("queue.subtitle")}</p>
+          <p className="text-xs text-muted-foreground">{t("queue.subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div role="tablist" aria-label={t("queue.col.status")} className="flex rounded-lg border bg-muted/50 p-0.5">
@@ -177,7 +177,7 @@ export function PatientsPage() {
                 aria-selected={tab === s}
                 onClick={() => setTab(s)}
                 className={cn(
-                  "rounded-md px-3 py-1 text-xs whitespace-nowrap outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "rounded-md px-2.5 py-0.5 text-[11px] whitespace-nowrap outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                   tab === s ? "bg-background font-semibold shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -185,7 +185,7 @@ export function PatientsPage() {
               </button>
             ))}
           </div>
-          <Button size="sm" onClick={() => setAdding(true)}>
+          <Button size="xs" onClick={() => setAdding(true)}>
             <Plus />
             {t("patients.add")}
           </Button>
@@ -193,15 +193,15 @@ export function PatientsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <div className="relative min-w-44 flex-1 sm:max-w-64">
+          <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("queue.search")}
             aria-label={t("queue.search")}
-            className="ps-8"
+            className="h-7 ps-8 text-xs"
           />
         </div>
         <FilterPill
@@ -226,7 +226,7 @@ export function PatientsPage() {
         {filtered && (
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={() => {
               setQuery("")
               setPriority("all")
@@ -250,7 +250,10 @@ export function PatientsPage() {
         </p>
       )}
 
-      <DataTable columns={columns} data={rows} pageSize="auto" />
+      {/* Compact queue table: small text, uppercase muted headers. */}
+      <div className="flex min-h-0 flex-1 flex-col [&_table]:text-xs [&_th]:h-8 [&_th]:text-[11px] [&_th]:font-medium [&_th]:tracking-wide [&_th]:text-muted-foreground [&_th]:uppercase">
+        <DataTable columns={columns} data={rows} pageSize="auto" />
+      </div>
 
       <NewPatientDialog open={adding} onOpenChange={setAdding} onCreate={onCreate} />
       <QueueDetailsDialog patient={editing} clinics={clinics} onOpenChange={(o) => !o && setEditing(null)} onSave={save} />
@@ -275,7 +278,7 @@ function FilterPill({
   const current = options.find(([v]) => v === value)?.[1] ?? value
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="gap-1.5" />}>
+      <DropdownMenuTrigger render={<Button variant="outline" size="xs" className="gap-1 text-xs" />}>
         {icon}
         <span className="text-muted-foreground">{label}:</span>
         <span className="font-medium">{current}</span>

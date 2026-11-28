@@ -27,7 +27,7 @@ import { byDue, byLastEvent, clockLabel, eventWhen, PRIORITY_OPTIONS, PRIORITY_S
 /** Sortable header, as in the shadcn data-table guide. */
 function sortableHeader<TData extends RowData, TValue>(column: Column<DataTableFeatures, TData, TValue>, title: string) {
   return (
-    <Button variant="ghost" size="sm" className="-ms-2.5 uppercase" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+    <Button variant="ghost" size="xs" className="-ms-2 text-[11px] font-medium tracking-wide uppercase" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
       {title}
       <ArrowUpDown />
     </Button>
@@ -54,13 +54,13 @@ export function useQueueColumns({ onUpdate, onEdit }: Actions) {
             const p = row.original
             return (
               <div className="flex flex-col leading-tight">
-                <Link to={`/patients/${p.id}`} className="font-semibold hover:underline">
+                <Link to={`/patients/${p.id}`} className="text-sm font-semibold hover:underline">
                   {p.full_name}
                 </Link>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground">
                   {p.age} · {p.consent === "declined" ? t("patients.notSaved") : patientCode(p.patient_number)}
                 </span>
-                <span className="text-xs text-muted-foreground">{p.clinic ?? t("queue.noClinic")}</span>
+                <span className="text-[11px] text-muted-foreground">{p.clinic ?? t("queue.noClinic")}</span>
               </div>
             )
           },
@@ -71,7 +71,7 @@ export function useQueueColumns({ onUpdate, onEdit }: Actions) {
             const p = row.original
             return (
               <div className="flex flex-col items-start gap-1">
-                <span className={cn("text-sm", !p.reason && "text-muted-foreground")}>{p.reason ?? t("queue.noReason")}</span>
+                <span className={cn("text-xs", !p.reason && "text-muted-foreground")}>{p.reason ?? t("queue.noReason")}</span>
                 <Badge variant="outline" className={PRIORITY_STYLE[p.priority ?? "none"]}>
                   {t(`queue.priority.${p.priority ?? "none"}`)}
                 </Badge>
@@ -83,7 +83,7 @@ export function useQueueColumns({ onUpdate, onEdit }: Actions) {
           header: ({ column }) => sortableHeader(column, t("queue.col.lastEvent")),
           sortFn: (a, b) => -byLastEvent(a.original, b.original),
           cell: ({ row }) => (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {t(`queue.event.${row.original.last_event}`)} · {eventWhen(row.original.last_event_at, lang)}
             </span>
           ),
@@ -93,15 +93,15 @@ export function useQueueColumns({ onUpdate, onEdit }: Actions) {
           sortFn: (a, b) => byDue(a.original, b.original),
           cell: ({ row }) => {
             const due = row.original.due_at
-            if (!due) return <span className="text-sm text-muted-foreground">{t("queue.noDue")}</span>
+            if (!due) return <span className="text-xs text-muted-foreground">{t("queue.noDue")}</span>
             const ms = +new Date(due) - Date.now()
             const done = row.original.queue_status === "completed"
             const overdue = ms < 0 && !done
             return (
-              <div className={cn("flex flex-col text-sm leading-tight", overdue && "text-danger")}>
+              <div className={cn("flex flex-col text-xs leading-tight", overdue && "text-danger")}>
                 <span className="font-medium tabular-nums">{clockLabel(due, lang)}</span>
                 {!done && (
-                  <span className={cn("text-xs", !overdue && "text-muted-foreground")}>
+                  <span className={cn("text-[11px]", !overdue && "text-muted-foreground")}>
                     {overdue
                       ? t("queue.overdue", { duration: shortDuration(ms, lang) })
                       : t("queue.dueIn", { duration: shortDuration(ms, lang) })}
