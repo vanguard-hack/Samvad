@@ -1,5 +1,5 @@
-import { createColumnHelper } from "@tanstack/react-table"
-import { Eye } from "lucide-react"
+import { createColumnHelper, type Column, type RowData } from "@tanstack/react-table"
+import { ArrowUpDown, Eye } from "lucide-react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { type AppointmentStatus, type SampleAppointment } from "@/data/appointments"
-import { LanguageCell, sortableHeader } from "@/features/patients/columns"
+import { getLanguage } from "@/i18n/languages"
 import { formatShortDate, formatTimeSlot } from "@/lib/format"
 
 /** Badge styling by meaning, matching the patients table: caution = needs a human check. */
@@ -27,6 +27,16 @@ export function AppointmentStatusBadge({ status }: { status: AppointmentStatus }
     <Badge variant={b.variant} className={b.className}>
       {t(`consultations.status.${status}`)}
     </Badge>
+  )
+}
+
+/** Sortable header, as in the shadcn data-table guide. */
+function sortableHeader<TData extends RowData, TValue>(column: Column<DataTableFeatures, TData, TValue>, title: string) {
+  return (
+    <Button variant="ghost" size="sm" className="-ms-2.5" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+      {title}
+      <ArrowUpDown />
+    </Button>
   )
 }
 
@@ -64,7 +74,7 @@ export function useAppointmentColumns(onOpen: (appointment: SampleAppointment) =
         }),
         columnHelper.accessor("language", {
           header: t("consultations.col.language"),
-          cell: ({ row }) => <LanguageCell code={row.original.language} />,
+          cell: ({ row }) => <span>{getLanguage(row.original.language).englishName}</span>,
         }),
         columnHelper.accessor("visit", {
           header: ({ column }) => sortableHeader(column, t("consultations.col.visits")),
