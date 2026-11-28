@@ -11,13 +11,6 @@ import { findPatient } from "@/data/sample"
 import { AppointmentStatusBadge } from "@/features/consultations/columns"
 import { formatShortDate, formatTimeSlot } from "@/lib/format"
 
-/**
- * Transparent fill with a multi-colour gradient border: the gradient is painted
- * on a pseudo-element and masked down to a 1px ring, so the button stays see-through.
- */
-const GRADIENT_BORDER =
-  "relative before:pointer-events-none before:absolute before:-inset-px before:rounded-[inherit] before:p-px before:bg-linear-to-r before:from-sky-500 before:via-fuchsia-500 before:to-amber-400 before:content-[''] before:[mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]"
-
 type Props = {
   appointment: SampleAppointment | null
   onOpenChange: (open: boolean) => void
@@ -99,7 +92,7 @@ export function AppointmentDialog({ appointment, onOpenChange, onStatusChange }:
                 </p>
               )}
               {/* No backend yet: the report is generated in a later phase. */}
-              <Button variant="ghost" size="sm" className={GRADIENT_BORDER} onClick={() => setReportRequested(true)}>
+              <Button variant="outline" size="sm" onClick={() => setReportRequested(true)}>
                 {t("consultations.dialog.generateReport")}
                 <Stethoscope data-icon="inline-end" />
               </Button>

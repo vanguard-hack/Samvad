@@ -2,9 +2,11 @@ import { useReducedMotion } from "motion/react"
 import { SquarePen } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router"
 
 import { Button } from "@/components/ui/button"
-import { SAMPLE_APPOINTMENTS, SAMPLE_DOCTORS, type AppointmentStatus } from "@/data/appointments"
+import { SAMPLE_DOCTORS } from "@/data/appointments"
+import { setAppointmentStatus, useAppointments } from "@/data/appointments-store"
 import { SAMPLE_PATIENTS } from "@/data/sample"
 import { claimShortcut } from "@/features/assistant/assistant-bus"
 import { AssistantContext, type AssistantContextValue } from "@/features/assistant/assistant-context"
@@ -16,6 +18,7 @@ import type { ScheduleData, Suggestion } from "@/features/assistant/types"
 import { useAssistantChat } from "@/features/assistant/use-assistant-chat"
 import { useMessageText } from "@/features/assistant/use-message-text"
 import { AppointmentDialog } from "@/features/consultations/appointment-dialog"
+import { openCalendar } from "@/features/consultations/calendar-focus"
 
 /** Focus the composer on arrival with a mouse or pen, not on touch screens where it would pop the keyboard. */
 const FINE_POINTER = typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
@@ -25,8 +28,8 @@ export function SamvadAssistantPage() {
   const { text } = useMessageText()
   const reduced = useReducedMotion()
 
-  // Sample data held in memory only: status changes vanish on reload (no backend yet).
-  const [appointments, setAppointments] = useState(SAMPLE_APPOINTMENTS)
+  // Shared with the Consultations calendar (sample data held in memory).
+  const appointments = useAppointments()
   const data = useMemo<ScheduleData>(() => ({ appointments, patients: SAMPLE_PATIENTS, doctors: SAMPLE_DOCTORS }), [appointments])
   // A status changed in the dialog is in every later answer.
   const engine = useMemo(() => createLocalEngine(() => data), [data])
@@ -36,8 +39,6 @@ export function SamvadAssistantPage() {
 
   const [openId, setOpenId] = useState<string | null>(null)
   const open = appointments.find((a) => a.id === openId) ?? null
-  const setStatus = (id: string, status: AppointmentStatus) =>
-    setAppointments((list) => list.map((a) => (a.id === id ? { ...a, status } : a)))
 
   const composer = useRef<ComposerHandle>(null)
   const { send } = chat
@@ -51,6 +52,19 @@ export function SamvadAssistantPage() {
 
   // Ctrl+Space on this page dictates into the prompt bar instead of opening the floating assistant.
   useEffect(() => claimShortcut(() => composer.current?.toggleVoice()), [])
+
+  // "Put up Lakshmi's appointment details": after a moment to read the reply, go to the calendar at it.
+  // Only for replies made now, not ones restored from earlier in the session.
+  const navigate = useNavigate()
+  const latest = chat.messages.at(-1)
+  const handledOpen = useRef<string | null>(null)
+  useEffect(() => {
+    if (latest?.role !== "assistant" || !latest.reply.open || latest.at < chat.openedAt || handledOpen.current === latest.id) return
+    handledOpen.current = latest.id
+    const { appointmentId, date } = latest.reply.open
+    const timer = window.setTimeout(() => openCalendar(navigate, { appointmentId, date }), 900)
+    return () => window.clearTimeout(timer)
+  }, [latest, chat.openedAt, navigate])
 
   const value = useMemo<AssistantContextValue>(
     () => ({ data, openAppointment: setOpenId, ask: send, pending: chat.pending }),
@@ -134,7 +148,7 @@ export function SamvadAssistantPage() {
         </div>
       </div>
 
-      <AppointmentDialog appointment={open} onOpenChange={(next) => !next && setOpenId(null)} onStatusChange={setStatus} />
+      <AppointmentDialog appointment={open} onOpenChange={(next) => !next && setOpenId(null)} onStatusChange={setAppointmentStatus} />
     </AssistantContext.Provider>
   )
 }

@@ -115,9 +115,6 @@
   "consultations": {
     "title": "Consultations",
     "subtitle": "Every appointment, its slot and where it stands.",
-    "searchPlaceholder": "Search by appointment ID…",
-    "filterByDate": "Filter by date",
-    "clearDate": "Clear date",
     "col": {
       "id": "Appointment ID",
       "patientId": "Patient ID",
@@ -152,6 +149,27 @@
       "setStatus": "Appointment status",
       "generateReport": "Generate report",
       "reportUnavailable": "Reports arrive with the backend."
+    },
+    "calendar": {
+      "today": "Today",
+      "previous": "Previous",
+      "next": "Next",
+      "viewLabel": "Calendar view",
+      "view": {
+        "month": "Month",
+        "week": "Week",
+        "day": "Day",
+        "agenda": "Agenda"
+      },
+      "filters": "Departments",
+      "all": "All",
+      "upNext": "Up next",
+      "tomorrow": "Tomorrow",
+      "nothingUpNext": "No more consultations booked.",
+      "more": "+{{count}} more",
+      "empty": "No consultations in these days.",
+      "timezone": "Your timezone",
+      "visit": "Visit {{n}}"
     }
   },
   "section": {
@@ -559,7 +577,10 @@
       "slotsNone": "No free slots for {{date}} within clinic hours.",
       "doctors_zero": "No doctors have appointments in that period.",
       "doctors_one": "{{count}} doctor has appointments in that period.",
-      "doctors_other": "{{count}} doctors have appointments in that period."
+      "doctors_other": "{{count}} doctors have appointments in that period.",
+      "calendar": "Opening {{patient}}'s appointment in the calendar: {{doctor}}, {{date}} at {{time}}.",
+      "calendarOpen": "Opening the calendar.",
+      "calendarNone": "{{name}} has no appointments on the calendar."
     },
     "suggest": {
       "today": "Today's schedule",
@@ -575,7 +596,8 @@
       "doctorFree": "{{doctor}}'s free slots tomorrow",
       "nextFor": "{{name}}'s next visit",
       "profile": "About {{name}}",
-      "historyFor": "{{name}}'s past visits"
+      "historyFor": "{{name}}'s past visits",
+      "openCalendar": "Open {{name}}'s appointment"
     },
     "voiceError": "The assistant isn’t available right now. Try again."
   },
@@ -595,5 +617,16 @@
     "intake": "Patient intake",
     "patient": "Patient",
     "openPatient": "Open patient"
+  },
+  "voiceOrb": {
+    "state": {
+      "idle": "Ready",
+      "connecting": "Connecting",
+      "listening": "Listening",
+      "thinking": "Thinking",
+      "speaking": "Speaking",
+      "error": "Error"
+    },
+    "time": "Conversation time"
   }
 }

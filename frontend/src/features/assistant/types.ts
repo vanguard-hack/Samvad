@@ -52,6 +52,7 @@ export type Intent =
   | "patient"
   | "doctors"
   | "details"
+  | "calendar"
   | "help"
   | "greeting"
   | "thanks"
@@ -102,6 +103,8 @@ export interface AssistantReply {
   carried?: boolean
   blocks: ReplyBlock[]
   suggestions: Suggestion[]
+  /** Take the doctor to the Consultations calendar, at this appointment (or day) when given. */
+  open?: { page: "calendar"; appointmentId?: string; date?: string }
 }
 
 /** What the conversation remembers between turns (multi-turn context). */

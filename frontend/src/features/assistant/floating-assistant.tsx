@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 
-import { LiveOrb } from "@/features/interpreter/live-orb"
+import { LiveOrb, VoiceSessionChips, type VoiceOrbState } from "@/features/interpreter/live-orb"
 import { useMicLevel } from "@/features/interpreter/use-mic-level"
 import { listenOnce } from "@/features/speech/listen-once"
 import { usePlayback } from "@/features/speech/use-playback"
@@ -17,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { calendarDigest } from "@/data/appointments-store"
+import { openCalendar } from "@/features/consultations/calendar-focus"
 import { emitPageAction, runClaimedShortcut, type AssistantAction } from "./assistant-bus"
 import { ConversationRecorder } from "./conversations-api"
 
@@ -39,7 +41,21 @@ function looksLikeEcho(partial: string, speaking: string) {
   return heard.filter((w) => said.has(w)).length / heard.length >= 0.6
 }
 
+/** Speech in the first moments after Samvad stops talking may still be its own voice. */
+const ECHO_TAIL_MS = 800
+
+/** A partial transcript worth showing: real words, not a stray sound. */
+function substantive(text: string) {
+  return text.replace(/[^\p{L}\p{N}]/gu, "").length >= 3
+}
+
 type Phase = "idle" | "listening" | "thinking" | "speaking" | "error"
+/**
+ * What the bubble shows. Set only by events, never derived from the phase:
+ * the doctor's words while they speak, then Samvad's reply, which stays on
+ * screen until the doctor starts the next question.
+ */
+type Bubble = { kind: "question" | "reply" | "error"; text: string }
 type Turn = { role: "user" | "assistant"; text: string }
 type Reply = { reply: string; actions: AssistantAction[]; ended: boolean }
 
@@ -75,9 +91,13 @@ export function FloatingAssistant() {
   const reduced = useReducedMotion()
   const [on, setOn] = useState(false)
   const [phase, setPhase] = useState<Phase>("idle")
-  const [heard, setHeard] = useState("")
-  const [reply, setReply] = useState("")
+  const [bubble, setBubble] = useState<Bubble | null>(null)
+  // The reply on screen, and until when Samvad's own voice may reach the microphone.
+  const lastReply = useRef("")
+  const echoUntil = useRef(0)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  // When the conversation began (the microphone went live), for the timer under the orb.
+  const [startedAt, setStartedAt] = useState<number | null>(null)
   const history = useRef<Turn[]>([])
   const recorder = useRef<ConversationRecorder | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -112,6 +132,7 @@ export function FloatingAssistant() {
     })
     setOn(false)
     setPhase("idle")
+    setStartedAt(null)
   }, [stopPlayback])
 
   const perform = useCallback(
@@ -124,6 +145,11 @@ export function FloatingAssistant() {
               ? "/"
               : `/${action.page}`
         navigate(to)
+        return
+      }
+      // The calendar at one appointment, with its details open.
+      if (action.type === "show_appointment") {
+        openCalendar(navigate, { appointmentId: action.appointment_id })
         return
       }
       // Queue actions belong to the patients page (home): open it first if needed.
@@ -140,8 +166,9 @@ export function FloatingAssistant() {
     abortRef.current = ctrl
     const { signal } = ctrl
     setOn(true)
-    setHeard("")
-    setReply("")
+    setBubble(null)
+    lastReply.current = ""
+    echoUntil.current = 0
     setPhase("listening")
     history.current = [] // a new opening is a new session
     const log = new ConversationRecorder()
@@ -152,6 +179,7 @@ export function FloatingAssistant() {
       mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
       if (signal.aborted) return
       setStream(mic)
+      setStartedAt(Date.now())
 
       // Always listening: the next question is picked up while Samvad is still
       // thinking or speaking, and speaking over it interrupts (barge-in).
@@ -163,8 +191,12 @@ export function FloatingAssistant() {
           signal,
           timeoutMs: SILENCE_MS,
           onPartial: (partial) => {
-            setHeard(partial)
-            if (partial.trim()) interruptHandler?.(partial)
+            // Only the doctor's own words replace what's on screen: a stray sound, or
+            // Samvad's voice leaking into the microphone, never does.
+            if (!substantive(partial)) return
+            if (Date.now() < echoUntil.current && looksLikeEcho(partial, lastReply.current)) return
+            setBubble({ kind: "question", text: partial })
+            interruptHandler?.(partial)
           },
         })
         heard.catch(() => {}) // awaited below; avoid an unhandled rejection if the session stops first
@@ -177,7 +209,7 @@ export function FloatingAssistant() {
         const said = await nextQuestion
         if (signal.aborted) return
         if (!said) break // silence ends the conversation
-        setHeard(said.text)
+        setBubble({ kind: "question", text: said.text })
         setPhase("thinking")
         const language = fromSarvamCode(said.language) ?? "en"
         log.add("user", said.text, language)
@@ -210,6 +242,8 @@ export function FloatingAssistant() {
                 path: pathRef.current,
                 page_text: page.replace(/\s+\n/g, "\n").slice(0, 5000),
                 history: history.current,
+                // The appointments live in the browser, so Claude reads the calendar from here.
+                calendar: calendarDigest(),
               }),
               signal: request.signal,
             })
@@ -223,7 +257,11 @@ export function FloatingAssistant() {
             -MAX_HISTORY,
           )
           out.actions.forEach(perform)
-          setReply(out.reply)
+          // The reply stays on screen until the doctor starts the next question.
+          if (!interrupted) {
+            lastReply.current = out.reply
+            setBubble({ kind: "reply", text: out.reply })
+          }
           if (out.ended || interrupted) {
             log.add("assistant", out.reply, language, interrupted)
             if (out.ended) break // e.g. a voice registration took over the microphone
@@ -237,7 +275,12 @@ export function FloatingAssistant() {
             if (!interrupted && !signal.aborted) {
               speaking = out.reply
               setPhase("speaking")
-              await play(audio) // returns early if the doctor interrupts
+              echoUntil.current = Number.POSITIVE_INFINITY
+              try {
+                await play(audio) // returns early if the doctor interrupts
+              } finally {
+                echoUntil.current = Date.now() + ECHO_TAIL_MS
+              }
             }
           } catch {
             /* the reply is still shown */
@@ -252,7 +295,7 @@ export function FloatingAssistant() {
     } catch (err) {
       if ((err as Error).name === "AbortError") return
       setPhase("error")
-      setReply(t("assistant.voiceError"))
+      setBubble({ kind: "error", text: t("assistant.voiceError") })
       mic?.getTracks().forEach((tr) => tr.stop())
       setStream(null)
     }
@@ -292,7 +335,7 @@ export function FloatingAssistant() {
   if (!on && phase !== "error") return null
 
   const status = t(`assistant.phase.${phase}`)
-  const bubble = phase === "listening" ? heard : reply || heard
+  const orbState: VoiceOrbState = stream ? (phase === "idle" ? "listening" : phase) : "connecting"
 
   return (
     <div ref={bounds} className="pointer-events-none fixed inset-3 z-50">
@@ -310,7 +353,7 @@ export function FloatingAssistant() {
         {bubble && (
           <div className="relative w-72 rounded-lg border bg-popover p-3 pe-8 text-sm text-popover-foreground shadow-lg">
             <p className="mb-1 text-[11px] font-medium text-muted-foreground">{status}</p>
-            <p className={cn("max-h-40 overflow-y-auto break-words select-text", phase === "listening" && "text-primary")}>{bubble}</p>
+            <p className={cn("max-h-40 overflow-y-auto break-words select-text", bubble.kind === "question" && "text-primary")}>{bubble.text}</p>
             <button
               type="button"
               onClick={stop}
@@ -322,7 +365,8 @@ export function FloatingAssistant() {
           </div>
         )}
         {on && (
-          // Clicking the orb (not dragging it) opens: view conversations / end conversation.
+          <div className="flex flex-col items-center gap-1.5">
+          {/* Clicking the orb (not dragging it) opens: view conversations / end conversation. */}
           <DropdownMenu open={menuOpen} onOpenChange={(open) => setMenuOpen(open && !dragged.current)}>
             <DropdownMenuTrigger
               render={
@@ -336,7 +380,7 @@ export function FloatingAssistant() {
                 />
               }
             >
-              <LiveOrb level={level} className="size-full" />
+              <LiveOrb level={level} state={orbState} className="size-full" />
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="end" className="w-52">
               <DropdownMenuItem onClick={() => navigate("/conversations")}>
@@ -349,6 +393,8 @@ export function FloatingAssistant() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <VoiceSessionChips state={orbState} startedAt={startedAt} />
+          </div>
         )}
       </motion.div>
       <p role="status" aria-live="polite" className="sr-only">

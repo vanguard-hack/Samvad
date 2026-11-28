@@ -128,6 +128,7 @@ function suggestions(intent: Intent, f: AppointmentFilters, data: ScheduleData):
   if (patient) {
     const name = firstName(patient.name)
     if (intent !== "next") add({ label: msg("suggest.nextFor", { name }), query: `next appointment for ${patient.name}` })
+    if (intent !== "calendar") add({ label: msg("suggest.openCalendar", { name }), query: `show ${patient.name}'s appointment details` })
     if (intent !== "patient") add({ label: msg("suggest.profile", { name }), query: `tell me about ${patient.name}` })
     add({ label: msg("suggest.historyFor", { name }), query: `past appointments for ${patient.name}` })
   }
@@ -235,6 +236,37 @@ export function answer(query: string, ctx: ConversationContext, data: ScheduleDa
         reply([appointmentMessage("reply.details", a, data)], [{ type: "appointments", ids: [a.id] }], intent, f, data),
         intent,
         [a.id],
+        f,
+      )
+    }
+
+    case "calendar": {
+      // Opens the Consultations calendar at the patient's appointment: in the dates
+      // asked about, the next one still to come, else the most recent.
+      const byId = p.appointmentId ? data.appointments.find((x) => x.id === p.appointmentId) : undefined
+      if (p.appointmentId && !byId) return done(reply([msg("reply.detailsUnknown", { id: p.appointmentId })], [], intent, {}, data), intent)
+      const patientId = byId?.patientId ?? filters.patientId
+      if (!patientId) {
+        // "Open the calendar" with no one named: just go there (on the day asked about, if any).
+        const date = isSingleDay(p.filters.range) ? p.filters.range?.from : undefined
+        return done(reply([msg("reply.calendarOpen")], [], intent, {}, data, { open: { page: "calendar", date } }), intent, [], ctx.filters)
+      }
+      const pick = (f: AppointmentFilters) => {
+        const pool = select(data, f)
+        return pool.find((a) => isUpcoming(a, c)) ?? pool.filter((a) => isPast(a, c)).at(-1) ?? pool[0]
+      }
+      const f: AppointmentFilters = { patientId }
+      const hit = byId ?? pick({ patientId, range: p.filters.range }) ?? (p.filters.range ? pick(f) : undefined)
+      if (!hit) {
+        const name = data.patients.find((x) => x.id === patientId)?.name ?? patientId
+        return done(reply([msg("reply.calendarNone", { name })], [], intent, f, data), intent, [], f)
+      }
+      return done(
+        reply([appointmentMessage("reply.calendar", hit, data)], [{ type: "appointments", ids: [hit.id] }], intent, f, data, {
+          open: { page: "calendar", appointmentId: hit.id },
+        }),
+        intent,
+        [hit.id],
         f,
       )
     }

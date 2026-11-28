@@ -1,71 +1,41 @@
-import { X } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useLocation, useNavigate } from "react-router"
 
-import { DataTable } from "@/components/data-table/data-table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { SAMPLE_APPOINTMENTS, type AppointmentStatus, type SampleAppointment } from "@/data/appointments"
+import { getAppointments, setAppointmentStatus, useAppointments } from "@/data/appointments-store"
 import { AppointmentDialog } from "@/features/consultations/appointment-dialog"
-import { useAppointmentColumns } from "@/features/consultations/columns"
+import type { CalendarFocusState } from "@/features/consultations/calendar-focus"
+import { EventCalendar, type CalendarFocus } from "@/features/consultations/event-calendar"
 
-const PAGE_SIZE = 10
-
+/** Consultations as an event calendar; a consultation opens its details dialog. */
 export function ConsultationsPage() {
   const { t } = useTranslation()
-  // Sample data held in memory only: status changes vanish on reload (no backend yet).
-  const [appointments, setAppointments] = useState(SAMPLE_APPOINTMENTS)
+  // Shared with the assistants (sample data held in memory).
+  const appointments = useAppointments()
   const [openId, setOpenId] = useState<string | null>(null)
-  // ISO date (yyyy-mm-dd) from the date input; "" shows every date.
-  const [date, setDate] = useState("")
-
-  const onOpen = useCallback((a: SampleAppointment) => setOpenId(a.id), [])
-  const columns = useAppointmentColumns(onOpen)
-  const visible = useMemo(() => (date ? appointments.filter((a) => a.date === date) : appointments), [appointments, date])
+  const [focus, setFocus] = useState<CalendarFocus | null>(null)
   // Looked up by id so the dialog shows the latest status after a change.
   const open = appointments.find((a) => a.id === openId) ?? null
 
-  const setStatus = (id: string, status: AppointmentStatus) =>
-    setAppointments((list) => list.map((a) => (a.id === id ? { ...a, status } : a)))
+  // An assistant sent the doctor here: show that appointment on the calendar, with its details open.
+  const location = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => {
+    const state = location.state as CalendarFocusState
+    if (!state?.focusAppointment && !state?.focusDate) return
+    const target = state.focusAppointment ? getAppointments().find((a) => a.id === state.focusAppointment) : undefined
+    const date = target?.date ?? state.focusDate
+    if (date) setFocus({ key: location.key, date, id: target?.id })
+    if (target) setOpenId(target.id)
+    // Clear the request, so going back or reloading doesn't open it again.
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location, navigate])
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 p-5">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-lg font-semibold">{t("consultations.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("consultations.subtitle")}</p>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={visible}
-        filterColumn="id"
-        filterPlaceholder={t("consultations.searchPlaceholder")}
-        pageSize={PAGE_SIZE}
-        autoResetPageIndex={false}
-        toolbar={
-          <div className="flex items-center gap-1">
-            <Input
-              type="date"
-              aria-label={t("consultations.filterByDate")}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-auto"
-            />
-            {date && (
-              <Button variant="ghost" size="icon-sm" onClick={() => setDate("")}>
-                <X />
-                <span className="sr-only">{t("consultations.clearDate")}</span>
-              </Button>
-            )}
-          </div>
-        }
-      />
-
-      <AppointmentDialog
-        appointment={open}
-        onOpenChange={(next) => !next && setOpenId(null)}
-        onStatusChange={setStatus}
-      />
+    <div className="flex h-full min-h-0 flex-col p-3 sm:p-4">
+      <h1 className="sr-only">{t("consultations.title")}</h1>
+      <EventCalendar appointments={appointments} focus={focus} onOpen={(a) => setOpenId(a.id)} />
+      <AppointmentDialog appointment={open} onOpenChange={(next) => !next && setOpenId(null)} onStatusChange={setAppointmentStatus} />
     </div>
   )
 }

@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type Sex } from "@/data/sample"
 import { claimShortcut } from "@/features/assistant/assistant-bus"
-import { LiveOrb } from "@/features/interpreter/live-orb"
+import { LiveOrb, VoiceSessionChips, type VoiceOrbState } from "@/features/interpreter/live-orb"
 import { getLanguage, LANGUAGES } from "@/i18n/languages"
 import { cn } from "@/lib/utils"
 import { maskPhone, type NewPatient } from "./patients-api"
@@ -110,6 +110,8 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
   // The patient's words, verbatim, for each field filled by voice (Critical Rule 6).
   const [heard, setHeard] = useState<Partial<Record<IntakeField, string>>>({})
   const [missed, setMissed] = useState<IntakeField[]>([])
+  // When the voice questions began, for the timer under the orb.
+  const [voiceStartedAt, setVoiceStartedAt] = useState<number | null>(null)
 
   const intake = useVoiceIntake({
     onStep: (i) => {
@@ -140,6 +142,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
   const reset = () => {
     intake.stop()
     intake.clearRecording()
+    setVoiceStartedAt(null)
     autoStarted.current = false
     autoSaved.current = false
     setHeard({})
@@ -227,6 +230,7 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
   const startVoice = (code: string) => {
     setHeard({})
     setMissed([])
+    setVoiceStartedAt(Date.now())
     void intake.start(code)
   }
 
@@ -285,6 +289,8 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
 
   // Floating orb in the corner (outside the form) while the questions run.
   const showOrb = open && created === null && intake.phase !== "idle"
+  const intakeOrbState: VoiceOrbState =
+    intake.phase === "starting" ? "connecting" : intake.phase === "done" ? "idle" : intake.phase
   const voiceOrb =
     showOrb &&
     createPortal(
@@ -324,7 +330,12 @@ export function NewPatientDialog({ open, onOpenChange, onCreate, autoLanguage = 
             </>
           )}
         </div>
-        {intake.phase !== "done" && intake.phase !== "error" && <LiveOrb level={intake.level} className="size-20 drop-shadow-lg" />}
+        {intake.phase !== "done" && intake.phase !== "error" && (
+          <div className="flex flex-col items-center gap-1.5">
+            <LiveOrb level={intake.level} state={intakeOrbState} className="size-20" />
+            <VoiceSessionChips state={intakeOrbState} startedAt={voiceStartedAt} />
+          </div>
+        )}
       </div>,
       document.body,
     )
