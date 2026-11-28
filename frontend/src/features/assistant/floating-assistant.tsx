@@ -252,7 +252,7 @@ export function FloatingAssistant() {
     } catch (err) {
       if ((err as Error).name === "AbortError") return
       setPhase("error")
-      setReply(t("assistant.error"))
+      setReply(t("assistant.voiceError"))
       mic?.getTracks().forEach((tr) => tr.stop())
       setStream(null)
     }

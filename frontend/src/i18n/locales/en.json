@@ -70,7 +70,8 @@
     "breadcrumb": "Breadcrumb",
     "interpreter": "Interpreter",
     "profile": "Profile",
-    "conversations": "Conversations"
+    "conversations": "Conversations",
+    "assistant": "Samvad Assistant"
   },
   "topbar": {
     "search": "Search patients, IDs…"
@@ -110,6 +111,48 @@
     "notSaved": "Not saved",
     "loadError": "Couldn’t load patients.",
     "retry": "Try again"
+  },
+  "consultations": {
+    "title": "Consultations",
+    "subtitle": "Every appointment, its slot and where it stands.",
+    "searchPlaceholder": "Search by appointment ID…",
+    "filterByDate": "Filter by date",
+    "clearDate": "Clear date",
+    "col": {
+      "id": "Appointment ID",
+      "patientId": "Patient ID",
+      "date": "Date",
+      "timeSlot": "Time slot",
+      "language": "Language",
+      "visits": "Visits",
+      "status": "Status"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "active": "Active",
+      "needsReview": "Needs review",
+      "followUp": "Follow-up",
+      "closed": "Closed"
+    },
+    "department": {
+      "generalMedicine": "General Medicine",
+      "cardiology": "Cardiology",
+      "endocrinology": "Endocrinology",
+      "orthopaedics": "Orthopaedics",
+      "pulmonology": "Pulmonology"
+    },
+    "open": "View appointment",
+    "dialog": {
+      "title": "Appointment",
+      "description": "Details of this appointment.",
+      "patientName": "Patient name",
+      "doctorId": "Doctor ID",
+      "doctorName": "Doctor name",
+      "department": "Department",
+      "setStatus": "Appointment status",
+      "generateReport": "Generate report",
+      "reportUnavailable": "Reports arrive with the backend."
+    }
   },
   "section": {
     "title": "{{name}} is coming in phase {{n}}",
@@ -395,7 +438,7 @@
     }
   },
   "assistant": {
-    "error": "The assistant isn’t available right now. Try again.",
+    "error": "Something went wrong while answering.",
     "close": "Close",
     "stop": "Click, press Esc or Ctrl+Space to stop",
     "phase": {
@@ -407,7 +450,130 @@
     },
     "menu": "Assistant options",
     "viewConversations": "View conversations",
-    "end": "End conversation"
+    "end": "End conversation",
+    "title": "Samvad Assistant",
+    "name": "Samvad Assistant",
+    "you": "You",
+    "subtitle": "Ask about appointments in plain words. Follow-up questions keep the context.",
+    "sampleData": "Sample data",
+    "sampleDataHint": "Answers come from the sample schedule on this device. Nothing is sent anywhere.",
+    "newChat": "New chat",
+    "conversation": "Conversation with Samvad Assistant",
+    "disclaimer": "Answers come from the sample schedule. Check the appointment before acting on it.",
+    "thinking": "Looking through the schedule…",
+    "stopped": "Stopped. Ask again whenever you're ready.",
+    "retry": "Try again",
+    "carried": "Building on your last question",
+    "filters": "Filters used for this answer",
+    "showMore_one": "Show {{count}} more",
+    "showMore_other": "Show {{count}} more",
+    "showLess": "Show less",
+    "appointmentsCount_one": "{{count}} appointment",
+    "appointmentsCount_other": "{{count}} appointments",
+    "empty": {
+      "greeting": {
+        "morning": "Good morning, {{name}}",
+        "afternoon": "Good afternoon, {{name}}",
+        "evening": "Good evening, {{name}}"
+      },
+      "greetingAnon": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening"
+      },
+      "title": "What would you like to know about the schedule?",
+      "body": "Ask about a patient, a doctor, a date or a status. I remember the conversation, so you can keep narrowing it down."
+    },
+    "composer": {
+      "label": "Message Samvad Assistant",
+      "placeholder": "Ask about appointments, e.g. “Who needs review today?”",
+      "hint": "Enter to send · Shift+Enter for a new line",
+      "send": "Send",
+      "stop": "Stop"
+    },
+    "when": {
+      "today": "today",
+      "tomorrow": "tomorrow",
+      "yesterday": "yesterday"
+    },
+    "range": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "nextWeek": "Next week",
+      "lastWeek": "Last week",
+      "thisMonth": "This month",
+      "nextMonth": "Next month",
+      "lastMonth": "Last month",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "nextDays_one": "Next {{count}} day",
+      "nextDays_other": "Next {{count}} days",
+      "lastDays_one": "Last {{count}} day",
+      "lastDays_other": "Last {{count}} days"
+    },
+    "summary": {
+      "total": "Appointments",
+      "patients": "Patients",
+      "doctors": "Doctors",
+      "byStatus": "Appointments by status"
+    },
+    "slots": {
+      "none": "Fully booked",
+      "hours": "Clinic hours 9 AM – 1 PM and 2 PM – 5 PM, in 30-minute slots."
+    },
+    "reply": {
+      "greeting": "Hello! I can look up today's schedule, a patient's next visit, a doctor's free slots or anything that needs your review.",
+      "thanks": "Happy to help. Anything else about the schedule?",
+      "help": "I answer from the appointment schedule. Ask about a patient, a doctor or department, a date (“tomorrow”, “next week”, “5 Dec”) or a status (“needs review”, “follow-up”), and combine them freely. Follow-ups like “and tomorrow?” or “only those needing review” keep the context.",
+      "unknown": "I couldn't match that to the schedule. Try a patient or doctor's name, a date like “tomorrow”, or a status like “needs review”.",
+      "whichPatient": "Which patient do you mean? Tell me their name or patient ID (like SMV-1001).",
+      "list_one": "I found {{count}} appointment.",
+      "list_other": "I found {{count}} appointments.",
+      "listNone": "No appointments match that. Try a wider date range or fewer filters.",
+      "count_zero": "There are no appointments that match.",
+      "count_one": "There is {{count}} appointment.",
+      "count_other": "There are {{count}} appointments.",
+      "next": "Next up: {{patient}} with {{doctor}}, {{date}} at {{time}}.",
+      "nextNone": "Nothing upcoming matches that.",
+      "last": "Most recent: {{patient}} with {{doctor}}, {{date}} at {{time}}.",
+      "lastNone": "There's no past appointment that matches.",
+      "details": "Here is the appointment: {{patient}} with {{doctor}}, {{date}} at {{time}}.",
+      "detailsUnknown": "I couldn't find appointment {{id}}.",
+      "patient_one": "{{name}}, {{age}}, has {{count}} appointment on record.",
+      "patient_other": "{{name}}, {{age}}, has {{count}} appointments on record.",
+      "patientNext": "Next visit: {{date}} at {{time}} with {{doctor}}.",
+      "patientUnknown": "I couldn't find that patient. Try their full name or patient ID (like SMV-1001).",
+      "summary_one": "Here's the overview: {{count}} appointment.",
+      "summary_other": "Here's the overview: {{count}} appointments.",
+      "summaryNone": "Nothing is scheduled for that period.",
+      "summaryReview_one": "{{count}} needs your review.",
+      "summaryReview_other": "{{count}} need your review.",
+      "summaryNext": "Next up is {{patient}} with {{doctor}}, {{date}} at {{time}}.",
+      "slots": "Here are the free slots for {{date}}.",
+      "slotsNone": "No free slots for {{date}} within clinic hours.",
+      "doctors_zero": "No doctors have appointments in that period.",
+      "doctors_one": "{{count}} doctor has appointments in that period.",
+      "doctors_other": "{{count}} doctors have appointments in that period."
+    },
+    "suggest": {
+      "today": "Today's schedule",
+      "tomorrow": "What about tomorrow?",
+      "nextWeek": "And next week?",
+      "needsReview": "What needs my review?",
+      "onlyReview": "Only those needing review",
+      "onlyStatus": "Only “{{status}}”",
+      "followUps": "Follow-ups",
+      "summaryToday": "Summarise today",
+      "summaryWeek": "This week at a glance",
+      "freeToday": "Free slots today",
+      "doctorFree": "{{doctor}}'s free slots tomorrow",
+      "nextFor": "{{name}}'s next visit",
+      "profile": "About {{name}}",
+      "historyFor": "{{name}}'s past visits"
+    },
+    "voiceError": "The assistant isn’t available right now. Try again."
   },
   "conversations": {
     "title": "Conversations",

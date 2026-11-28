@@ -70,7 +70,8 @@
     "breadcrumb": "नेविगेशन पथ",
     "interpreter": "दुभाषिया",
     "profile": "प्रोफ़ाइल",
-    "conversations": "बातचीत"
+    "conversations": "बातचीत",
+    "assistant": "संवाद सहायक"
   },
   "topbar": {
     "search": "मरीज़, ID खोजें…"
@@ -110,6 +111,48 @@
     "notSaved": "सहेजा नहीं गया",
     "loadError": "मरीज़ लोड नहीं हो सके।",
     "retry": "फिर कोशिश करें"
+  },
+  "consultations": {
+    "title": "परामर्श",
+    "subtitle": "हर अपॉइंटमेंट, उसका समय और उसकी स्थिति।",
+    "searchPlaceholder": "अपॉइंटमेंट ID से खोजें…",
+    "filterByDate": "तारीख़ से छाँटें",
+    "clearDate": "तारीख़ हटाएँ",
+    "col": {
+      "id": "अपॉइंटमेंट ID",
+      "patientId": "मरीज़ ID",
+      "date": "तारीख़",
+      "timeSlot": "समय",
+      "language": "भाषा",
+      "visits": "मुलाक़ातें",
+      "status": "स्थिति"
+    },
+    "status": {
+      "scheduled": "तय",
+      "active": "सक्रिय",
+      "needsReview": "समीक्षा ज़रूरी",
+      "followUp": "फ़ॉलो-अप",
+      "closed": "बंद"
+    },
+    "department": {
+      "generalMedicine": "सामान्य चिकित्सा",
+      "cardiology": "हृदय रोग",
+      "endocrinology": "एंडोक्राइनोलॉजी",
+      "orthopaedics": "हड्डी रोग",
+      "pulmonology": "फेफड़ा रोग"
+    },
+    "open": "अपॉइंटमेंट देखें",
+    "dialog": {
+      "title": "अपॉइंटमेंट",
+      "description": "इस अपॉइंटमेंट का विवरण।",
+      "patientName": "मरीज़ का नाम",
+      "doctorId": "डॉक्टर ID",
+      "doctorName": "डॉक्टर का नाम",
+      "department": "विभाग",
+      "setStatus": "अपॉइंटमेंट की स्थिति",
+      "generateReport": "रिपोर्ट बनाएँ",
+      "reportUnavailable": "रिपोर्ट बैकएंड के साथ आएगी।"
+    }
   },
   "section": {
     "title": "{{name}} चरण {{n}} में आएगा",
@@ -395,7 +438,7 @@
     }
   },
   "assistant": {
-    "error": "सहायक अभी उपलब्ध नहीं है। फिर कोशिश करें।",
+    "error": "जवाब देते समय कुछ गड़बड़ हो गई।",
     "close": "बंद करें",
     "stop": "रोकने के लिए क्लिक करें, Esc या Ctrl+Space दबाएँ",
     "phase": {
@@ -407,7 +450,130 @@
     },
     "menu": "सहायक विकल्प",
     "viewConversations": "बातचीत देखें",
-    "end": "बातचीत समाप्त करें"
+    "end": "बातचीत समाप्त करें",
+    "title": "संवाद सहायक",
+    "name": "संवाद सहायक",
+    "you": "आप",
+    "subtitle": "अपॉइंटमेंट के बारे में आसान शब्दों में पूछें। आगे के सवालों में पिछला संदर्भ बना रहता है।",
+    "sampleData": "नमूना डेटा",
+    "sampleDataHint": "जवाब इसी डिवाइस पर मौजूद नमूना शेड्यूल से आते हैं। कुछ भी कहीं भेजा नहीं जाता।",
+    "newChat": "नई बातचीत",
+    "conversation": "संवाद सहायक से बातचीत",
+    "disclaimer": "जवाब नमूना शेड्यूल से आते हैं। कोई कदम उठाने से पहले अपॉइंटमेंट जाँच लें।",
+    "thinking": "शेड्यूल देख रहा हूँ…",
+    "stopped": "रोक दिया। जब चाहें फिर से पूछें।",
+    "retry": "फिर से कोशिश करें",
+    "carried": "आपके पिछले सवाल के आधार पर",
+    "filters": "इस जवाब में लगाए गए फ़िल्टर",
+    "showMore_one": "{{count}} और दिखाएँ",
+    "showMore_other": "{{count}} और दिखाएँ",
+    "showLess": "कम दिखाएँ",
+    "appointmentsCount_one": "{{count}} अपॉइंटमेंट",
+    "appointmentsCount_other": "{{count}} अपॉइंटमेंट",
+    "empty": {
+      "greeting": {
+        "morning": "सुप्रभात, {{name}}",
+        "afternoon": "नमस्कार, {{name}}",
+        "evening": "शुभ संध्या, {{name}}"
+      },
+      "greetingAnon": {
+        "morning": "सुप्रभात",
+        "afternoon": "नमस्कार",
+        "evening": "शुभ संध्या"
+      },
+      "title": "शेड्यूल के बारे में आप क्या जानना चाहेंगे?",
+      "body": "किसी मरीज़, डॉक्टर, तारीख़ या स्थिति के बारे में पूछें। मुझे बातचीत याद रहती है, इसलिए आप सवाल को और सीमित कर सकते हैं।"
+    },
+    "composer": {
+      "label": "संवाद सहायक को संदेश",
+      "placeholder": "अपॉइंटमेंट के बारे में पूछें, जैसे “Who needs review today?”",
+      "hint": "भेजने के लिए Enter · नई पंक्ति के लिए Shift+Enter",
+      "send": "भेजें",
+      "stop": "रोकें"
+    },
+    "when": {
+      "today": "आज",
+      "tomorrow": "कल",
+      "yesterday": "बीता कल"
+    },
+    "range": {
+      "today": "आज",
+      "tomorrow": "कल",
+      "yesterday": "बीता कल",
+      "thisWeek": "इस हफ़्ते",
+      "nextWeek": "अगले हफ़्ते",
+      "lastWeek": "पिछले हफ़्ते",
+      "thisMonth": "इस महीने",
+      "nextMonth": "अगले महीने",
+      "lastMonth": "पिछले महीने",
+      "upcoming": "आने वाले",
+      "past": "पिछले",
+      "nextDays_one": "अगला {{count}} दिन",
+      "nextDays_other": "अगले {{count}} दिन",
+      "lastDays_one": "पिछला {{count}} दिन",
+      "lastDays_other": "पिछले {{count}} दिन"
+    },
+    "summary": {
+      "total": "अपॉइंटमेंट",
+      "patients": "मरीज़",
+      "doctors": "डॉक्टर",
+      "byStatus": "स्थिति के अनुसार अपॉइंटमेंट"
+    },
+    "slots": {
+      "none": "पूरी तरह बुक",
+      "hours": "क्लिनिक का समय सुबह 9 – दोपहर 1 और दोपहर 2 – शाम 5, 30 मिनट के स्लॉट में।"
+    },
+    "reply": {
+      "greeting": "नमस्ते! मैं आज का शेड्यूल, किसी मरीज़ की अगली विज़िट, डॉक्टर के ख़ाली स्लॉट या समीक्षा वाले अपॉइंटमेंट देख सकता हूँ।",
+      "thanks": "ख़ुशी हुई। शेड्यूल के बारे में और कुछ?",
+      "help": "मैं अपॉइंटमेंट शेड्यूल से जवाब देता हूँ। किसी मरीज़, डॉक्टर या विभाग, तारीख़ (“tomorrow”, “next week”, “5 Dec”) या स्थिति (“needs review”, “follow-up”) के बारे में पूछें और इन्हें मिलाकर भी पूछ सकते हैं। “and tomorrow?” जैसे आगे के सवालों में संदर्भ बना रहता है।",
+      "unknown": "मैं इसे शेड्यूल से नहीं जोड़ पाया। किसी मरीज़ या डॉक्टर का नाम, “tomorrow” जैसी तारीख़ या “needs review” जैसी स्थिति लिखकर देखें।",
+      "whichPatient": "आप किस मरीज़ की बात कर रहे हैं? उनका नाम या मरीज़ ID (जैसे SMV-1001) बताएँ।",
+      "list_one": "मुझे {{count}} अपॉइंटमेंट मिला।",
+      "list_other": "मुझे {{count}} अपॉइंटमेंट मिले।",
+      "listNone": "कोई अपॉइंटमेंट मेल नहीं खाता। तारीख़ की सीमा बढ़ाएँ या फ़िल्टर कम करें।",
+      "count_zero": "कोई मेल खाता अपॉइंटमेंट नहीं है।",
+      "count_one": "{{count}} अपॉइंटमेंट है।",
+      "count_other": "{{count}} अपॉइंटमेंट हैं।",
+      "next": "अगला: {{patient}}, {{doctor}} के साथ, {{date}} {{time}} बजे।",
+      "nextNone": "आने वाला कोई अपॉइंटमेंट मेल नहीं खाता।",
+      "last": "सबसे हाल का: {{patient}}, {{doctor}} के साथ, {{date}} {{time}} बजे।",
+      "lastNone": "कोई पिछला अपॉइंटमेंट मेल नहीं खाता।",
+      "details": "यह अपॉइंटमेंट है: {{patient}}, {{doctor}} के साथ, {{date}} {{time}} बजे।",
+      "detailsUnknown": "अपॉइंटमेंट {{id}} नहीं मिला।",
+      "patient_one": "{{name}}, {{age}} वर्ष, के रिकॉर्ड में {{count}} अपॉइंटमेंट है।",
+      "patient_other": "{{name}}, {{age}} वर्ष, के रिकॉर्ड में {{count}} अपॉइंटमेंट हैं।",
+      "patientNext": "अगली विज़िट: {{date}} {{time}} बजे, {{doctor}} के साथ।",
+      "patientUnknown": "वह मरीज़ नहीं मिला। पूरा नाम या मरीज़ ID (जैसे SMV-1001) लिखकर देखें।",
+      "summary_one": "सारांश: {{count}} अपॉइंटमेंट।",
+      "summary_other": "सारांश: {{count}} अपॉइंटमेंट।",
+      "summaryNone": "इस अवधि में कुछ भी तय नहीं है।",
+      "summaryReview_one": "{{count}} को आपकी समीक्षा चाहिए।",
+      "summaryReview_other": "{{count}} को आपकी समीक्षा चाहिए।",
+      "summaryNext": "अगला: {{patient}}, {{doctor}} के साथ, {{date}} {{time}} बजे।",
+      "slots": "{{date}} के ख़ाली स्लॉट ये हैं।",
+      "slotsNone": "{{date}} को क्लिनिक के समय में कोई ख़ाली स्लॉट नहीं है।",
+      "doctors_zero": "इस अवधि में किसी डॉक्टर के अपॉइंटमेंट नहीं हैं।",
+      "doctors_one": "इस अवधि में {{count}} डॉक्टर के अपॉइंटमेंट हैं।",
+      "doctors_other": "इस अवधि में {{count}} डॉक्टरों के अपॉइंटमेंट हैं।"
+    },
+    "suggest": {
+      "today": "आज का शेड्यूल",
+      "tomorrow": "और कल?",
+      "nextWeek": "और अगले हफ़्ते?",
+      "needsReview": "मुझे क्या देखना है?",
+      "onlyReview": "सिर्फ़ समीक्षा वाले",
+      "onlyStatus": "सिर्फ़ “{{status}}”",
+      "followUps": "फ़ॉलो-अप",
+      "summaryToday": "आज का सारांश",
+      "summaryWeek": "इस हफ़्ते की झलक",
+      "freeToday": "आज के ख़ाली स्लॉट",
+      "doctorFree": "कल {{doctor}} के ख़ाली स्लॉट",
+      "nextFor": "{{name}} की अगली विज़िट",
+      "profile": "{{name}} के बारे में",
+      "historyFor": "{{name}} की पिछली विज़िट"
+    },
+    "voiceError": "सहायक अभी उपलब्ध नहीं है। फिर कोशिश करें।"
   },
   "conversations": {
     "title": "बातचीत",

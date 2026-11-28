@@ -9,9 +9,9 @@ import hashlib
 import time
 
 import httpx
-from fastapi import Header, HTTPException, status
+from fastapi import HTTPException, status
 
-from .config import get_settings
+from app.core.config import get_settings
 
 _CACHE_SECONDS = 60
 _cache: dict[str, tuple[float, str]] = {}
@@ -45,19 +45,3 @@ async def verify_token(token: str) -> str:
         _cache.clear()
     _cache[key] = (now + _CACHE_SECONDS, user_id)
     return user_id
-
-
-async def current_user(authorization: str = Header(default="")) -> str:
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer":
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sign in required")
-    return await verify_token(token.strip())
-
-
-async def current_session(authorization: str = Header(default="")) -> tuple[str, str]:
-    """(user id, access token) — for calls that act on Supabase as the doctor (RLS applies)."""
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer":
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sign in required")
-    token = token.strip()
-    return await verify_token(token), token
