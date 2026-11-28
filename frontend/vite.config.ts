@@ -47,6 +47,13 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  // Local dev: the FastAPI backend (backend/, uvicorn on :8000) serves /api,
+  // including the live-transcription WebSocket. In production Caddy does this.
+  server: {
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:8000', ws: true, changeOrigin: true },
+    },
+  },
   // Pre-bundle these on startup so the dev server never discovers it mid-session
   // (that leaves a stale dep cache: 504 "Outdated Optimize Dep" and a blank page).
   optimizeDeps: {
