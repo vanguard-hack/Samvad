@@ -166,6 +166,13 @@ def test_reply_falls_back_to_plain_text_when_the_answer_tool_is_skipped():
     assert out.paragraphs == ["Today", "No consultations booked."] and out.appointment_ids == [] and out.suggestions == []
 
 
+def test_reply_accepts_list_fields_sent_as_strings():
+    out = samvad_agent_service.build_reply("s", {"paragraphs": '["One.", "Two."]', "suggestions": "And tomorrow?"}, "", {}, set())
+    assert out.paragraphs == ["One.", "Two."] and out.suggestions == ["And tomorrow?"]
+    empty = samvad_agent_service.build_reply("s", {}, "", {}, set())
+    assert empty.paragraphs == [samvad_agent_service.NO_ANSWER]
+
+
 def test_native_tools_filter_and_report_errors(monkeypatch):
     from fastapi import HTTPException
 
@@ -187,6 +194,13 @@ def test_native_tools_filter_and_report_errors(monkeypatch):
     assert is_error and "not configured" in text
     text, is_error = asyncio.run(tools.call("find_appointments", {"from": "2026-12-05", "to": "2026-12-01"}))
     assert is_error and "Invalid request" in text
+
+
+def test_wispr_tools_that_change_data_are_never_offered_or_called():
+    assert samvad_agent_service.is_read_only("search_meetings") and samvad_agent_service.is_read_only("get_memory_files")
+    assert not samvad_agent_service.is_read_only("edit_memory")
+    text, is_error = asyncio.run(wispr_agent.call_tool("edit_memory", {}))
+    assert is_error and "not available" in text
 
 
 def test_prompt_hides_tools_and_lists_features():

@@ -66,9 +66,18 @@ MAX_PARAGRAPHS = 8
 MAX_SUGGESTIONS = 3
 MAX_CARDS = 30
 REFUSAL = "Sorry, I can't help with that. I can help with your schedule, your patients and your meeting notes."
+NO_ANSWER = "I couldn't put an answer together that time. Please ask again, or narrow it to one day, patient or meeting."
 TOO_MANY_STEPS = "That needed too many steps. Try a narrower question, for example one day or one patient."
 APPOINTMENT_ID = re.compile(r"\bAPT-\d{4,}\b")
 MARKDOWN = re.compile(r"(\*\*|__|`+|^#{1,6}\s+)", re.MULTILINE)
+
+
+WRITE_PREFIXES = ("edit_", "create_", "update_", "delete_", "add_", "remove_", "set_", "write_", "send_", "move_")
+
+
+def is_read_only(tool_name: str) -> bool:
+    """Wispr Flow tools are named verb_noun; anything that writes is left out."""
+    return not tool_name.startswith(WRITE_PREFIXES)
 
 
 def _tool_result_text(result: Any) -> str:
@@ -131,11 +140,16 @@ class WisprAgent:
                 await self.conn.close()
             self.conn = McpConnection(get_settings().wispr_mcp_url, self._build_auth())
             listed = await (await self.conn.session()).list_tools()
+            # Samvad only reads Wispr Flow: tools that change data (e.g. edit_memory) are never offered to Claude.
             self.tools = [
                 {"name": t.name, "description": t.description or "", "input_schema": t.inputSchema or {"type": "object"}}
                 for t in listed.tools
+                if is_read_only(t.name)
             ]
+            skipped = [t.name for t in listed.tools if not is_read_only(t.name)]
             log.info("Loaded %d Wispr Flow MCP tools: %s", len(self.tools), ", ".join(t["name"] for t in self.tools))
+            if skipped:
+                log.info("Skipped Wispr Flow tools that change data: %s", ", ".join(skipped))
             self.error = None
             self.ready = True
         except BaseException as e:  # anyio wraps errors in ExceptionGroup
@@ -200,6 +214,8 @@ class WisprAgent:
     # ---- tools ----
     async def call_tool(self, name: str, args: dict) -> tuple[str, bool]:
         """(result text, is_error) for one MCP tool call. Errors go back to Claude as the result."""
+        if not is_read_only(name):  # never offered, but never run either
+            return f"{name} is not available.", True
         conn = self.conn
         if conn is None:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, {"message": "Samvad agent is not ready"})
@@ -274,12 +290,16 @@ class WisprAgent:
             for _ in range(MAX_STEPS):
                 response = await client.messages.create(
                     model=s.bedrock_model,
-                    max_tokens=4000,
+                    max_tokens=16000,  # room for adaptive thinking plus a long meeting recap
                     system=system,
                     tools=tools,
                     thinking={"type": "adaptive"},
                     messages=messages,
                 )
+                if response.stop_reason == "max_tokens":
+                    log.warning("Agent answer hit max_tokens")
+                    fallback = NO_ANSWER
+                    break
                 if response.stop_reason == "refusal":
                     answer = {"paragraphs": [REFUSAL]}
                     break
@@ -327,6 +347,19 @@ def _now(timezone: str) -> dt.datetime:
         return dt.datetime.now(dt.UTC)
 
 
+def _as_list(value: Any) -> list | None:
+    """A list field of the answer tool; models sometimes send it as a JSON string or a single string."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+        except ValueError:
+            return re.split(r"\n\s*\n", value)
+        return parsed if isinstance(parsed, list) else [str(parsed)]
+    return None
+
+
 def _clean(text: Any, tool_names: set[str]) -> str:
     """Plain text for the page: no markdown, no internal tool names."""
     text = MARKDOWN.sub("", str(text)).strip()
@@ -342,19 +375,20 @@ def build_reply(
 ) -> AgentQueryOut:
     """The page's reply from Claude's answer (or its plain text when it skipped the answer tool)."""
     answer = answer or {}
-    raw = answer.get("paragraphs")
-    if not isinstance(raw, list) or not raw:
-        raw = re.split(r"\n\s*\n", fallback) if fallback else ["Done."]
-    paragraphs = [p for p in (_clean(x, tool_names) for x in raw) if p][:MAX_PARAGRAPHS] or ["Done."]
+    raw = _as_list(answer.get("paragraphs"))
+    if not raw:
+        raw = re.split(r"\n\s*\n", fallback) if fallback else [NO_ANSWER]
+    paragraphs = [p for p in (_clean(x, tool_names) for x in raw) if p][:MAX_PARAGRAPHS] or [NO_ANSWER]
+    if paragraphs == [NO_ANSWER]:
+        log.warning("Agent finished without an answer (answer keys: %s)", sorted(answer))
 
-    ids = answer.get("appointment_ids")
-    if not isinstance(ids, list):
+    ids = _as_list(answer.get("appointment_ids"))
+    if ids is None:
         ids = APPOINTMENT_ID.findall(" ".join(paragraphs))
     # Only appointments a lookup returned this turn: never a card for an id Claude made up.
     shown = list(dict.fromkeys(str(i) for i in ids if str(i) in found))[:MAX_CARDS]
 
-    suggestions = answer.get("suggestions")
-    suggestions = [_clean(x, tool_names)[:120] for x in suggestions] if isinstance(suggestions, list) else []
+    suggestions = [_clean(x, tool_names)[:120] for x in _as_list(answer.get("suggestions")) or []]
     return AgentQueryOut(
         session_id=session_id,
         response="\n\n".join(paragraphs),

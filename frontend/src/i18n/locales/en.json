@@ -477,8 +477,6 @@
     "name": "Samvad Assistant",
     "you": "You",
     "subtitle": "Ask about appointments in plain words. Follow-up questions keep the context.",
-    "sampleData": "Sample data",
-    "sampleDataHint": "Answers come from the sample schedule on this device. Nothing is sent anywhere.",
     "newChat": "New chat",
     "conversation": "Conversation with Samvad Assistant",
     "disclaimer": "Answers come from your schedule, patient records and meeting notes. Check the appointment before acting on it.",
