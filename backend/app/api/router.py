@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter
 
-from app.api.endpoints import health, intake, stt, translate, tts
+from app.api.endpoints import assistant, health, intake, stt, translate, tts
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(intake.router, prefix="/intake")
+api_router.include_router(assistant.router)
 api_router.include_router(health.router)
 api_router.include_router(stt.router)
 api_router.include_router(tts.router)

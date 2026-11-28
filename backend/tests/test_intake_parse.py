@@ -33,7 +33,7 @@ def test_lists_and_yes_no():
 
 
 def test_claude_value_normalising():
-    from app.intake import normalise
+    from app.services.intake_parser import normalise
 
     assert normalise("consent", "ok", "yes") == "given"
     assert normalise("consent", "ok", "declined") == "declined"

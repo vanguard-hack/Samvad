@@ -37,17 +37,19 @@ app/
 ├── main.py                 # FastAPI app, CORS, mounts api_router
 ├── api/
 │   ├── router.py           # every endpoint router under /api
-│   ├── dependencies.py     # current_user (Supabase bearer token)
-│   └── endpoints/          # health, stt (+ WS stream), tts, translate, intake
+│   ├── dependencies.py     # current_user / current_session (Supabase bearer token)
+│   └── endpoints/          # health, stt (+ WS stream), tts, translate, intake, assistant
 ├── core/
 │   ├── config.py           # Settings from env / backend/.env
 │   ├── security.py         # Supabase Auth token check (cached 60 s)
 │   ├── sarvam.py           # Sarvam client + safe upstream error mapping
+│   ├── bedrock.py          # Claude on Amazon Bedrock client
+│   ├── exceptions.py       # ToolError (assistant tool failures)
 │   └── languages.py        # Samvad → Sarvam language codes
 ├── schemas/                # Pydantic request bodies
-├── services/               # speech, live stream relay, voice intake (+ pure parser)
+├── services/               # speech, live stream relay, voice intake (+ pure parser), assistant (+ tools)
 ├── models/                 # reserved: the API owns no tables yet
-└── repositories/           # reserved: no direct database access yet
+└── repositories/           # patient_repository: Supabase REST as the doctor (RLS)
 tests/
 ```
 

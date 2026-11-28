@@ -87,3 +87,33 @@ def parse(field: str, original: str, english: str) -> str | list[str] | None:
         yn = yes_no(e)
         return None if yn is None else ("yes" if yn else "no")
     return e or None
+
+
+def normalise(field: str, status_: str, value: str) -> str | list[str] | None:
+    """Validates Claude's value for the field. "" / [] = explicit none, None = not usable."""
+    if status_ == "unclear":
+        return None
+    if status_ == "none":
+        if field == "conditions":
+            return []
+        return "" if field in ("phone", "allergies", "medicines") else None
+    v = value.strip()
+    if field == "age":
+        return v if v.isdigit() and 0 <= int(v) <= 120 else None
+    if field == "sex":
+        return v.upper() if v.upper() in ("F", "M", "O") else None
+    if field == "phone":
+        digits = re.sub(r"\D", "", v)[-10:]
+        return digits if re.fullmatch(r"[6-9]\d{9}", digits) else None
+    if field == "conditions":
+        keys = [c.strip().lower() for c in v.split(",")]
+        keys = ["hypertension" if k in ("bp", "blood pressure") else k for k in keys]
+        found = [k for k in CONDITION_WORDS if k in keys]
+        return found or None
+    yes_no_map = {"given": "yes", "yes": "yes", "declined": "no", "no": "no"}
+    answer = yes_no_map.get(v.lower())
+    if field == "consent":
+        return None if answer is None else ("given" if answer == "yes" else "declined")
+    if field == "confirm":
+        return answer
+    return v[:200] or None

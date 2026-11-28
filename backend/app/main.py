@@ -10,7 +10,7 @@ Endpoints (all under /api, all need a Supabase access token except health):
   POST /api/tts          text → spoken WAV in Samvad's female voice
   POST /api/translate    text → text between Indian languages
   POST /api/intake/*     voice-guided New patient questions (see services/intake_service.py)
-  POST /api/assistant    Ctrl+Space voice assistant (Claude on Bedrock, see assistant.py)
+  POST /api/assistant    Ctrl+Space voice assistant (Claude on Bedrock, see services/assistant_service.py)
   GET  /api/health       liveness (no auth)
 """
 
@@ -24,13 +24,6 @@ settings = get_settings()
 
 app = FastAPI(title="Samvad API", docs_url=None, redoc_url=None, openapi_url=None)
 
-
-def _include_routers() -> None:
-    from .assistant import router as assistant_router
-    from .intake import router as intake_router
-
-    app.include_router(intake_router)
-    app.include_router(assistant_router)
 if settings.cors_origins:
     app.add_middleware(
         CORSMiddleware,
