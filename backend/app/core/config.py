@@ -6,9 +6,12 @@ from functools import lru_cache
 from pathlib import Path
 
 
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+
 def _load_dotenv() -> None:
     """Minimal .env loader for local development; real env vars always win."""
-    path = Path(__file__).resolve().parents[2] / ".env"  # backend/.env
+    path = BACKEND_DIR / ".env"
     if not path.is_file():
         return
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -37,6 +40,22 @@ class Settings:
     # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY variables, read by boto3.
     bedrock_model: str = ""
     aws_region: str = ""
+    # Samvad agent: Claude (the Bedrock settings above) with the Wispr Flow MCP tools.
+    # Wispr Flow signs in with OAuth (no API key); tokens are cached in wispr_token_file.
+    wispr_mcp_url: str = "https://api.wisprflow.ai/connect/mcp"  # no trailing slash
+    wispr_oauth_scope: str = "openid offline_access"
+    wispr_token_file: Path = BACKEND_DIR / ".wispr_oauth.json"
+    # Optional secret (the token file's JSON, or base64 of it) that seeds wispr_token_file
+    # while that file has no tokens, e.g. on Railway where neither repo nor image has it.
+    wispr_oauth_json: str = ""
+    # Where browsers reach this API; the OAuth redirect is <this>/api/samvad-agent/oauth/callback.
+    public_base_url: str = "http://localhost:8000"
+    wispr_auth_timeout_s: int = 600
+    wispr_open_browser: bool = False  # open the sign-in page on the server's own desktop (local dev only)
+
+    @property
+    def wispr_redirect_uri(self) -> str:
+        return f"{self.public_base_url}/api/samvad-agent/oauth/callback"
 
 
 @lru_cache
@@ -53,4 +72,12 @@ def get_settings() -> Settings:
         # Accept LiteLLM-style ids ("bedrock/eu.anthropic...") as well as plain Bedrock ids.
         bedrock_model=env("BEDROCK_MODEL_ID", "").removeprefix("bedrock/"),
         aws_region=env("AWS_REGION") or env("AWS_REGION_NAME") or env("AWS_DEFAULT_REGION", ""),
+        wispr_mcp_url=env("WISPR_MCP_URL", "https://api.wisprflow.ai/connect/mcp").rstrip("/"),
+        wispr_oauth_scope=env("WISPR_OAUTH_SCOPE", "openid offline_access"),
+        # A relative path is relative to backend/; an absolute one (a Railway volume) is used as is.
+        wispr_token_file=BACKEND_DIR / env("WISPR_TOKEN_FILE", ".wispr_oauth.json"),
+        wispr_oauth_json=env("WISPR_OAUTH_JSON", "").strip(),
+        public_base_url=env("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/"),
+        wispr_auth_timeout_s=int(env("WISPR_AUTH_TIMEOUT_S", "600")),
+        wispr_open_browser=env("WISPR_OPEN_BROWSER", "false").lower() == "true",
     )

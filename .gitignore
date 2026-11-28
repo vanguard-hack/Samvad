@@ -11,6 +11,9 @@ dev-dist/
 .env
 .env.*
 !.env.example
+# Wispr Flow OAuth tokens (Samvad agent)
+.wispr_oauth.json*
+.wispr_test_oauth.json*
 *.local
 
 # Clerk CLI claim/temp files

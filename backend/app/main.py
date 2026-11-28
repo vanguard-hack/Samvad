@@ -11,6 +11,7 @@ Endpoints (all under /api, all need a Supabase access token except health):
   POST /api/translate    text → text between Indian languages
   POST /api/intake/*     voice-guided New patient questions (see services/intake_service.py)
   POST /api/assistant    Ctrl+Space voice assistant (Claude on Bedrock, see services/assistant_service.py)
+  POST /api/samvad-agent/query  Claude with the Wispr Flow MCP tools (see services/samvad_agent_service.py)
   GET  /api/health       liveness (no auth)
 """
 

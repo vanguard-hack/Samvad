@@ -9,6 +9,7 @@ audio and text pass through and are never stored or logged.
 | `WS /api/stt/stream` | Live 16 kHz PCM → partial + final transcripts |
 | `POST /api/tts` | Text → WAV, female voice `ishita` (bulbul:v3, 11 languages) |
 | `POST /api/translate` | Text → text (sarvam-translate:v1, 22 languages + English) |
+| `POST /api/samvad-agent/query` | Claude with the Wispr Flow MCP tools (`/tools`, `/auth/*` alongside) |
 | `GET /api/health` | Liveness, no sign-in needed |
 
 Every endpoint except health needs the doctor's Supabase access token.
@@ -44,14 +45,46 @@ app/
 │   ├── security.py         # Supabase Auth token check (cached 60 s)
 │   ├── sarvam.py           # Sarvam client + safe upstream error mapping
 │   ├── bedrock.py          # Claude on Amazon Bedrock client
+│   ├── mcp_connection.py   # one shared MCP client session (Wispr Flow)
+│   ├── wispr_auth.py       # Wispr Flow OAuth: stored tokens, refresh, browser sign-in
 │   ├── exceptions.py       # ToolError (assistant tool failures)
 │   └── languages.py        # Samvad → Sarvam language codes
 ├── schemas/                # Pydantic request bodies
-├── services/               # speech, live stream relay, voice intake (+ pure parser), assistant (+ tools)
+├── services/               # speech, live stream relay, voice intake (+ pure parser), assistant (+ tools), samvad_agent (Wispr Flow MCP)
 ├── models/                 # reserved: the API owns no tables yet
 └── repositories/           # patient_repository: Supabase REST as the doctor (RLS)
 tests/
 ```
+
+## Samvad agent (Wispr Flow MCP)
+
+`POST /api/samvad-agent/query` with `{"query": "...", "session_id": "..."}` runs Claude
+(`BEDROCK_MODEL_ID`) with the 16 read-only Wispr Flow MCP tools and returns
+`{"session_id", "response", "tools_available"}`. One Wispr Flow account is connected for the
+whole server. One MCP session is kept open and shared; tool calls Claude makes in the same
+turn run in parallel, each with a 60 s timeout.
+
+- If `WISPR_TOKEN_FILE` (default `backend/.wispr_oauth.json`, git-ignored) has tokens, they are
+  used and refreshed automatically. A token file from `wispr_agent` works.
+- Otherwise the first request returns 503 with an `auth_url`. Open it, sign in to Wispr Flow,
+  and the browser is sent back to `PUBLIC_BASE_URL/api/samvad-agent/oauth/callback`.
+- `GET /api/samvad-agent/auth/status`, `POST .../auth/retry`, `POST .../auth/reset` (deletes
+  the tokens and starts a new sign-in), `GET .../tools`.
+
+### Wispr Flow on Railway
+
+The token file is git-ignored and the Dockerfile copies only `backend/app`, so it never
+reaches GitHub or the image. Supply it at runtime instead:
+
+1. Add a Railway volume mounted at `/data` and set `WISPR_TOKEN_FILE=/data/wispr_oauth.json`.
+   Refreshes rotate the refresh token, so the file must survive redeploys.
+2. Either seed it: run `python make_railway_secret.py` in `wispr_agent` and paste the value into
+   the secret variable `WISPR_OAUTH_JSON`. It is written to the volume only while the file has
+   no tokens; after that the file wins. Then stop using that token file locally.
+3. Or sign in on Railway: set `PUBLIC_BASE_URL=https://<your-app>.up.railway.app`, sign in to
+   Samvad there, and in that tab's browser console run
+   `fetch('/api/samvad-agent/auth/status',{headers:{Authorization:'Bearer '+JSON.parse(localStorage[Object.keys(localStorage).find(k=>k.endsWith('-auth-token'))]).access_token}}).then(r=>r.json()).then(console.log)`.
+   Open the `auth_url` it prints within `WISPR_AUTH_TIMEOUT_S`; the tokens are saved to the volume.
 
 ## Production
 
